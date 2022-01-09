@@ -1,2 +1,5 @@
-# cloud-event-store
-Event Store as a service
+# Cloud Event Store
+_Event Store as a service_
+
+![all components](./docs/components.png)
+
