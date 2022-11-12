@@ -3,7 +3,7 @@
 #
 # Before building the container image run:
 #
-# ./gradlew build -Dquarkus.package.type=native
+# ./gradlew build -Dquarkus.package.type=native -Dquarkus.native.container-build=true -Dquarkus.native.container-runtime=docker
 #
 # Then, build the image with:
 #
@@ -11,17 +11,17 @@
 #
 # Then run the container using:
 #
-# docker run -i --rm -p 8080:8080 quarkus/cloud-event-store-server
+# docker run -i --rm -p 9000:9000 quarkus/cloud-event-store-server
 #
 ###
 FROM registry.access.redhat.com/ubi8/ubi-minimal:8.5
-WORKDIR /work/
-RUN chown 1001 /work \
-    && chmod "g+rwX" /work \
-    && chown 1001:root /work
-COPY --chown=1001:root build/*-runner /work/application
+WORKDIR /usr/src/app/
+RUN chown 1001 /usr/src/app \
+    && chmod "g+rwX" /usr/src/app \
+    && chown 1001:root /usr/src/app
+COPY --chown=1001:root cloud-store/build/*-runner /usr/src/app/target
 
-EXPOSE 8080
+EXPOSE 9000
 USER 1001
 
-CMD ["./application", "-Dquarkus.http.host=0.0.0.0"]
+CMD ["./target", "-Dquarkus.http.host=0.0.0.0"]
