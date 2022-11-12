@@ -1,0 +1,62 @@
+syntax = "proto3";
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/any.proto";
+
+option java_multiple_files = true;
+option java_package = "me.kcybulski.ces";
+option java_outer_classname = "EventStoreProto";
+
+package ces;
+
+message EventStream {
+    repeated Event event = 1;
+}
+
+message EventStreamsQuery {
+    repeated string id = 1;
+}
+
+message Query {
+    oneof queries {
+        EventStreamsQuery eventStreams = 1;
+    }
+}
+
+message PublishEvents {
+    repeated Event event = 1;
+}
+
+message Command {
+    oneof commands {
+        PublishEvents publish = 1;
+    }
+}
+
+message Message {
+    oneof message {
+        Query query = 1;
+        Command command = 2;
+    }
+}
+
+message Event {
+    string id = 1;
+    string type = 2;
+    string stream = 3;
+    google.protobuf.Timestamp timestamp = 4;
+    google.protobuf.Any payload = 5;
+}
+
+message Events {
+    repeated Event event = 1;
+}
+
+message Response {
+    oneof responses {
+        Events event = 1;
+    }
+}
+
+service Streaming {
+    rpc Pipe(stream Message) returns (stream Response) {}
+}
