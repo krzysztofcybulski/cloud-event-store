@@ -1,8 +1,8 @@
-package me.kcybulski.ces.api
+package me.kcybulski.ces.eventstore.tasks
 
-import me.kcybulski.ces.api.RunHandlerResult.ErrorWhileHandling
-import me.kcybulski.ces.api.RunHandlerResult.HandledSuccessfully
-import me.kcybulski.ces.api.RunHandlerResult.NoHandlerFound
+import me.kcybulski.ces.eventstore.tasks.RunHandlerResult.ErrorWhileHandling
+import me.kcybulski.ces.eventstore.tasks.RunHandlerResult.HandledSuccessfully
+import me.kcybulski.ces.eventstore.tasks.RunHandlerResult.NoHandlerFound
 import mu.KotlinLogging
 
 internal class SubscriptionsRegistry {

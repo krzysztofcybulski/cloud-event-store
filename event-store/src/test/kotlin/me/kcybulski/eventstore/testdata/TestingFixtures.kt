@@ -1,9 +1,9 @@
 package me.kcybulski.eventstore.testdata
 
-import me.kcybulski.ces.api.EventStore
-import me.kcybulski.ces.api.EventStream
-import me.kcybulski.ces.api.ReadQuery.SpecificStream
-import me.kcybulski.ces.api.Stream
+import me.kcybulski.ces.eventstore.EventStore
+import me.kcybulski.ces.eventstore.EventStream
+import me.kcybulski.ces.eventstore.ReadQuery.SpecificStream
+import me.kcybulski.ces.eventstore.Stream
 
 suspend infix fun EventStore.hasShoppingCartStream(shoppingCartId: String): EventStream {
     val stream = Stream(shoppingCartId)

@@ -1,4 +1,4 @@
-package me.kcybulski.ces.api
+package me.kcybulski.ces.eventstore
 
 interface Event<T> {
 

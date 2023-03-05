@@ -4,14 +4,14 @@ import io.kotest.assertions.timing.eventually
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.collections.shouldHaveSingleElement
 import io.kotest.matchers.shouldBe
-import me.kcybulski.ces.api.EventStore
-import me.kcybulski.ces.api.EventStoreConfiguration
+import me.kcybulski.ces.eventstore.EventStore
+import me.kcybulski.ces.eventstore.EventStoreConfiguration
 import me.kcybulski.eventstore.testdata.AddProductEvent
 import kotlin.time.Duration.Companion.seconds
 
 class SubscribingToEventsSpec : StringSpec({
 
-    val eventStore: EventStore = EventStoreConfiguration.inMemoryEventStore()
+    val eventStore: EventStore = EventStoreConfiguration.inMemoryEventStoreWithCoroutineTasksProcessing()
 
     val myShoppingCart = "1001"
 

@@ -1,6 +1,6 @@
-package me.kcybulski.ces.api.aggregates
+package me.kcybulski.ces.eventstore.aggregates
 
-import me.kcybulski.ces.api.Event
+import me.kcybulski.ces.eventstore.Event
 
 
 abstract class Aggregate<T: Aggregate<T>> {

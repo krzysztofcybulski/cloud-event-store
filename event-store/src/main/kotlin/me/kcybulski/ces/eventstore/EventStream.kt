@@ -1,4 +1,4 @@
-package me.kcybulski.ces.api
+package me.kcybulski.ces.eventstore
 
 import java.time.Instant
 
@@ -13,7 +13,7 @@ interface EventStream {
 
 }
 
-data class StreamedEvent<T: Any>(
+data class StreamedEvent<T : Any>(
     val id: EventId,
     val timestamp: Instant,
     val type: String,

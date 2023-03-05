@@ -1,4 +1,4 @@
-package me.kcybulski.ces.api
+package me.kcybulski.ces.eventstore
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.databind.ObjectMapper
@@ -14,6 +14,10 @@ internal class JsonEventSerializer(
     private val objectMapper: ObjectMapper
 ) : EventSerializer {
 
+    init {
+        objectMapper.addMixIn(SimpleEvent::class.java, IgnoreSimpleEventPayload::class.java)
+    }
+
     override suspend fun <T> serialize(payload: T): String =
         objectMapper.writeValueAsString(payload)
 
@@ -25,6 +29,7 @@ internal abstract class IgnoreSimpleEventPayload {
 
     @get:JsonIgnore
     abstract val payload: Any
+
     @get:JsonIgnore
     abstract val type: Any
 

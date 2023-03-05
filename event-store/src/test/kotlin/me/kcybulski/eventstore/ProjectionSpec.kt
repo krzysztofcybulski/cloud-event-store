@@ -2,16 +2,16 @@ package me.kcybulski.eventstore
 
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
-import me.kcybulski.ces.api.EventStore
-import me.kcybulski.ces.api.EventStoreConfiguration
-import me.kcybulski.ces.api.ReadQuery.SpecificStream
-import me.kcybulski.ces.api.Stream
+import me.kcybulski.ces.eventstore.EventStore
+import me.kcybulski.ces.eventstore.EventStoreConfiguration
+import me.kcybulski.ces.eventstore.ReadQuery.SpecificStream
+import me.kcybulski.ces.eventstore.Stream
 import me.kcybulski.eventstore.testdata.AddProductEvent
 import me.kcybulski.eventstore.testdata.hasShoppingCartStream
 
 class ProjectionSpec : StringSpec({
 
-    val eventStore: EventStore = EventStoreConfiguration.inMemoryEventStore()
+    val eventStore: EventStore = EventStoreConfiguration.inMemoryEventStoreWithCoroutineTasksProcessing()
 
     val myShoppingCart = "1001"
 

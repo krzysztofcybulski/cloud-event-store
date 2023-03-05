@@ -1,14 +1,27 @@
-package me.kcybulski.ces.api
+package me.kcybulski.ces.eventstore.base
 
-import me.kcybulski.ces.api.ExpectedSequenceNumber.AnySequenceNumber
-import me.kcybulski.ces.api.ExpectedSequenceNumber.SpecificSequenceNumber
-import me.kcybulski.ces.api.PublishingResult.Failure.InvalidExpectedSequenceNumber
-import me.kcybulski.ces.api.PublishingResult.Success
-import me.kcybulski.ces.api.ReadQuery.AllEvents
-import me.kcybulski.ces.api.ReadQuery.SpecificEvent
-import me.kcybulski.ces.api.ReadQuery.SpecificStream
-import me.kcybulski.ces.api.SaveEventResult.OptimisticLockingError
-import me.kcybulski.ces.api.SaveEventResult.Saved
+import me.kcybulski.ces.eventstore.Event
+import me.kcybulski.ces.eventstore.EventId
+import me.kcybulski.ces.eventstore.EventSerializer
+import me.kcybulski.ces.eventstore.EventStore
+import me.kcybulski.ces.eventstore.EventStream
+import me.kcybulski.ces.eventstore.EventsRepository
+import me.kcybulski.ces.eventstore.ExpectedSequenceNumber
+import me.kcybulski.ces.eventstore.ExpectedSequenceNumber.AnySequenceNumber
+import me.kcybulski.ces.eventstore.ExpectedSequenceNumber.SpecificSequenceNumber
+import me.kcybulski.ces.eventstore.PublishingResult
+import me.kcybulski.ces.eventstore.PublishingResult.Failure.InvalidExpectedSequenceNumber
+import me.kcybulski.ces.eventstore.PublishingResult.Success
+import me.kcybulski.ces.eventstore.ReadQuery
+import me.kcybulski.ces.eventstore.ReadQuery.AllEvents
+import me.kcybulski.ces.eventstore.ReadQuery.SpecificEvent
+import me.kcybulski.ces.eventstore.ReadQuery.SpecificStream
+import me.kcybulski.ces.eventstore.SaveEventResult.OptimisticLockingError
+import me.kcybulski.ces.eventstore.SaveEventResult.Saved
+import me.kcybulski.ces.eventstore.SerializedEvent
+import me.kcybulski.ces.eventstore.Stream
+import me.kcybulski.ces.eventstore.StreamedEvent
+import me.kcybulski.ces.eventstore.tasks.SubscriptionsRegistry
 import mu.KotlinLogging.logger
 import java.time.Clock
 import java.util.UUID.randomUUID
@@ -42,7 +55,7 @@ internal class BaseEventStore(
             payload = serializer.serialize(event.payload),
             _class = event.javaClass.name
         )
-        return when(repository.save(serializedEvent)) {
+        return when (repository.save(serializedEvent)) {
             Saved -> Success(eventId)
             OptimisticLockingError -> InvalidExpectedSequenceNumber(expectedSequenceNumber as SpecificSequenceNumber)
         }

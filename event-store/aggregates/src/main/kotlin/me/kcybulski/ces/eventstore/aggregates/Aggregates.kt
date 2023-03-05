@@ -1,8 +1,8 @@
-package me.kcybulski.ces.api.aggregates
+package me.kcybulski.ces.eventstore.aggregates
 
-import me.kcybulski.ces.api.Event
-import me.kcybulski.ces.api.EventStore
-import me.kcybulski.ces.api.Stream
+import me.kcybulski.ces.eventstore.Event
+import me.kcybulski.ces.eventstore.EventStore
+import me.kcybulski.ces.eventstore.Stream
 
 class Aggregates(
     private val eventStore: EventStore

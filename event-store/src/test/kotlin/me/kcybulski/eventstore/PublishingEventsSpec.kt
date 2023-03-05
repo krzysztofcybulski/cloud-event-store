@@ -2,18 +2,18 @@ package me.kcybulski.eventstore
 
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.types.shouldBeInstanceOf
-import me.kcybulski.ces.api.EventStore
-import me.kcybulski.ces.api.EventStoreConfiguration.inMemoryEventStore
-import me.kcybulski.ces.api.ExpectedSequenceNumber.SpecificSequenceNumber
-import me.kcybulski.ces.api.PublishingResult.Failure.InvalidExpectedSequenceNumber
-import me.kcybulski.ces.api.PublishingResult.Success
-import me.kcybulski.ces.api.Stream
+import me.kcybulski.ces.eventstore.EventStore
+import me.kcybulski.ces.eventstore.EventStoreConfiguration.inMemoryEventStoreWithCoroutineTasksProcessing
+import me.kcybulski.ces.eventstore.ExpectedSequenceNumber.SpecificSequenceNumber
+import me.kcybulski.ces.eventstore.PublishingResult.Failure.InvalidExpectedSequenceNumber
+import me.kcybulski.ces.eventstore.PublishingResult.Success
+import me.kcybulski.ces.eventstore.Stream
 import me.kcybulski.eventstore.testdata.AddProductEvent
 import me.kcybulski.eventstore.testdata.hasShoppingCartStream
 
 class PublishingEventsSpec : StringSpec({
 
-    val eventStore: EventStore = inMemoryEventStore()
+    val eventStore: EventStore = inMemoryEventStoreWithCoroutineTasksProcessing()
 
     val myShoppingCart = "1001"
     val addMilkEvent = AddProductEvent(myShoppingCart, "Milk")

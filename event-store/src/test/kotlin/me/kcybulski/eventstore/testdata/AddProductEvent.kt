@@ -1,6 +1,6 @@
 package me.kcybulski.eventstore.testdata
 
-import me.kcybulski.ces.api.SimpleEvent
+import me.kcybulski.ces.eventstore.SimpleEvent
 
 class AddProductEvent(
     val shoppingCartId: String,

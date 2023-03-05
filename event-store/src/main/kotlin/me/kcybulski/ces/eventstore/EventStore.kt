@@ -1,17 +1,8 @@
-package me.kcybulski.ces.api
+package me.kcybulski.ces.eventstore
 
-import me.kcybulski.ces.api.ExpectedSequenceNumber.AnySequenceNumber
-import me.kcybulski.ces.api.ExpectedSequenceNumber.SpecificSequenceNumber
-import me.kcybulski.ces.api.Stream.Companion.GLOBAL
-
-@JvmInline
-value class Stream(val id: String) {
-
-    companion object {
-
-        internal val GLOBAL = Stream("__global__")
-    }
-}
+import me.kcybulski.ces.eventstore.ExpectedSequenceNumber.AnySequenceNumber
+import me.kcybulski.ces.eventstore.ExpectedSequenceNumber.SpecificSequenceNumber
+import me.kcybulski.ces.eventstore.Stream.Companion.GLOBAL
 
 interface EventStore {
 

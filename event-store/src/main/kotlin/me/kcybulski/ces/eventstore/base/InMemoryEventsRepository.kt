@@ -1,7 +1,13 @@
-package me.kcybulski.ces.api
+package me.kcybulski.ces.eventstore.base
 
-import me.kcybulski.ces.api.SaveEventResult.OptimisticLockingError
-import me.kcybulski.ces.api.SaveEventResult.Saved
+import me.kcybulski.ces.eventstore.EventId
+import me.kcybulski.ces.eventstore.EventsRepository
+import me.kcybulski.ces.eventstore.SaveEventResult
+import me.kcybulski.ces.eventstore.SaveEventResult.OptimisticLockingError
+import me.kcybulski.ces.eventstore.SaveEventResult.Saved
+import me.kcybulski.ces.eventstore.SerializedEvent
+import me.kcybulski.ces.eventstore.Stream
+import me.kcybulski.ces.eventstore.tasks.TasksRepository
 import java.util.concurrent.ConcurrentHashMap
 
 class InMemoryEventsRepository : EventsRepository, TasksRepository {

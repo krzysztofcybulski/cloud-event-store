@@ -3,19 +3,19 @@ package me.kcybulski.eventstore
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
-import me.kcybulski.ces.api.EventStore
-import me.kcybulski.ces.api.EventStoreConfiguration.inMemoryEventStore
-import me.kcybulski.ces.api.EventStream
-import me.kcybulski.ces.api.ReadQuery.AllEvents
-import me.kcybulski.ces.api.ReadQuery.SpecificEvent
-import me.kcybulski.ces.api.ReadQuery.SpecificStream
-import me.kcybulski.ces.api.Stream
+import me.kcybulski.ces.eventstore.EventStore
+import me.kcybulski.ces.eventstore.EventStoreConfiguration.inMemoryEventStoreWithCoroutineTasksProcessing
+import me.kcybulski.ces.eventstore.EventStream
+import me.kcybulski.ces.eventstore.ReadQuery.AllEvents
+import me.kcybulski.ces.eventstore.ReadQuery.SpecificEvent
+import me.kcybulski.ces.eventstore.ReadQuery.SpecificStream
+import me.kcybulski.ces.eventstore.Stream
 import me.kcybulski.eventstore.testdata.AddProductEvent
 import me.kcybulski.eventstore.testdata.hasShoppingCartStream
 
 class ReadingEventsSpec : StringSpec({
 
-    val eventStore: EventStore = inMemoryEventStore()
+    val eventStore: EventStore = inMemoryEventStoreWithCoroutineTasksProcessing()
 
     val myShoppingCart = "1001"
 

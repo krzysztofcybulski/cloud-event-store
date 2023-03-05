@@ -1,4 +1,7 @@
-package me.kcybulski.ces.api
+package me.kcybulski.ces.eventstore.tasks
+
+import me.kcybulski.ces.eventstore.EventId
+import me.kcybulski.ces.eventstore.SerializedEvent
 
 interface TasksRepository {
 

@@ -1,4 +1,4 @@
-package me.kcybulski.ces.api
+package me.kcybulski.ces.eventstore
 
 import java.time.Instant
 
@@ -14,8 +14,8 @@ interface EventsRepository {
 
 sealed interface SaveEventResult {
 
-    object Saved: SaveEventResult
-    object OptimisticLockingError: SaveEventResult
+    object Saved : SaveEventResult
+    object OptimisticLockingError : SaveEventResult
 
 }
 

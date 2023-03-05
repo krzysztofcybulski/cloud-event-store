@@ -1,4 +1,4 @@
-package me.kcybulski.ces.api
+package me.kcybulski.ces.eventstore.tasks
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
