@@ -7,6 +7,7 @@ dependencies {
     implementation(enforcedPlatform("io.quarkus.platform:quarkus-bom:2.13.1.Final"))
     implementation(enforcedPlatform("io.quarkus.platform:quarkus-google-cloud-services-bom:2.13.1.Final"))
     implementation("io.quarkus:quarkus-grpc")
+    implementation("io.quarkus:quarkus-resteasy-reactive")
     implementation("io.quarkiverse.googlecloudservices:quarkus-google-cloud-firestore")
     implementation("io.quarkus:quarkus-kotlin")
     implementation("io.quarkus:quarkus-config-yaml")

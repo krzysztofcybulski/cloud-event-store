@@ -1,6 +1,6 @@
 package me.kcybulski.ces.api
 
-class ListEventStream(
+internal class ListEventStream(
     private val streamedEvents: List<StreamedEvent<*>>
 ) : EventStream {
     override suspend fun startingFrom(eventId: EventId): EventStream =

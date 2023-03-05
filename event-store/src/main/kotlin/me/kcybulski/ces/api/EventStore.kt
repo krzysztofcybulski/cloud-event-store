@@ -23,7 +23,8 @@ interface EventStore {
 
     suspend fun read(readQuery: ReadQuery): EventStream
 
-    suspend fun <T : Any> subscribe(
+    suspend fun <T> subscribe(
+        name: String,
         type: String,
         handler: suspend (T) -> Unit
     )
