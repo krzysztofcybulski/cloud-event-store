@@ -26,7 +26,7 @@ class PublishingEventsSpec : StringSpec({
         result.shouldBeInstanceOf<Success>()
     }
 
-    "!should publish event with specific sequence number to empty stream" {
+    "should publish event with specific sequence number to empty stream" {
         //when
         val result = eventStore.publish(
             event = addMilkEvent,
@@ -38,7 +38,7 @@ class PublishingEventsSpec : StringSpec({
         result.shouldBeInstanceOf<Success>()
     }
 
-    "!should not publish event if given invalid expected sequence number to empty stream" {
+    "should not publish event if given invalid expected sequence number to empty stream" {
         //when
         val result = eventStore.publish(
             event = addMilkEvent,
@@ -49,7 +49,7 @@ class PublishingEventsSpec : StringSpec({
         //then
         result.shouldBeInstanceOf<InvalidExpectedSequenceNumber>()
     }
-    "!should publish event with specific sequence number to stream with some events" {
+    "should publish event with specific sequence number to stream with some events" {
         //given
         eventStore hasShoppingCartStream myShoppingCart
 
@@ -64,7 +64,7 @@ class PublishingEventsSpec : StringSpec({
         result.shouldBeInstanceOf<Success>()
     }
 
-    "!should not publish event if given invalid expected sequence number to stream with some events" {
+    "should not publish event if given invalid expected sequence number to stream with some events" {
         //given
         eventStore hasShoppingCartStream myShoppingCart
 

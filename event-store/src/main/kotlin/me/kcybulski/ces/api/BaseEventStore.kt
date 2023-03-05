@@ -1,9 +1,14 @@
 package me.kcybulski.ces.api
 
+import me.kcybulski.ces.api.ExpectedSequenceNumber.AnySequenceNumber
+import me.kcybulski.ces.api.ExpectedSequenceNumber.SpecificSequenceNumber
+import me.kcybulski.ces.api.PublishingResult.Failure.InvalidExpectedSequenceNumber
 import me.kcybulski.ces.api.PublishingResult.Success
 import me.kcybulski.ces.api.ReadQuery.AllEvents
 import me.kcybulski.ces.api.ReadQuery.SpecificEvent
 import me.kcybulski.ces.api.ReadQuery.SpecificStream
+import me.kcybulski.ces.api.SaveEventResult.OptimisticLockingError
+import me.kcybulski.ces.api.SaveEventResult.Saved
 import mu.KotlinLogging.logger
 import java.time.Clock
 import java.util.UUID.randomUUID
@@ -30,11 +35,17 @@ internal class BaseEventStore(
             timestamp = clock.instant(),
             type = event.type,
             subscribers = subscriptionsRegistry.subscribersNamesForType(event.type).toMutableList(),
+            sequenceNumber = when (expectedSequenceNumber) {
+                AnySequenceNumber -> null
+                is SpecificSequenceNumber -> expectedSequenceNumber.number
+            },
             payload = serializer.serialize(event.payload),
             _class = event.javaClass.name
         )
-        repository.save(serializedEvent)
-        return Success(eventId)
+        return when(repository.save(serializedEvent)) {
+            Saved -> Success(eventId)
+            OptimisticLockingError -> InvalidExpectedSequenceNumber(expectedSequenceNumber as SpecificSequenceNumber)
+        }
     }
 
     override suspend fun read(readQuery: ReadQuery): EventStream =
