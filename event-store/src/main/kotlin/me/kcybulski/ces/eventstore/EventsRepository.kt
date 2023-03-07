@@ -1,13 +1,14 @@
 package me.kcybulski.ces.eventstore
 
+import kotlinx.coroutines.flow.Flow
 import java.time.Instant
 
 interface EventsRepository {
 
     suspend fun save(event: SerializedEvent): SaveEventResult
 
-    suspend fun loadAll(): List<SerializedEvent>
-    suspend fun loadStream(stream: Stream): List<SerializedEvent>
+    suspend fun loadAll(): Flow<SerializedEvent>
+    suspend fun loadStream(stream: Stream): Flow<SerializedEvent>
     suspend fun findEvent(eventId: EventId): SerializedEvent?
 
 }

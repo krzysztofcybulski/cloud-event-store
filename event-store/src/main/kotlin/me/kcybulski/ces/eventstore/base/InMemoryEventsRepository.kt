@@ -1,5 +1,8 @@
 package me.kcybulski.ces.eventstore.base
 
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.asFlow
+import kotlinx.coroutines.flow.emptyFlow
 import me.kcybulski.ces.eventstore.EventId
 import me.kcybulski.ces.eventstore.EventsRepository
 import me.kcybulski.ces.eventstore.SaveEventResult
@@ -27,16 +30,16 @@ class InMemoryEventsRepository : EventsRepository, TasksRepository {
         return Saved
     }
 
-    override suspend fun loadAll(): List<SerializedEvent> {
-        return memory.values.flatten()
+    override suspend fun loadAll(): Flow<SerializedEvent> {
+        return memory.values.flatten().asFlow()
     }
 
-    override suspend fun loadStream(stream: Stream): List<SerializedEvent> {
-        return memory[stream] ?: emptyList()
+    override suspend fun loadStream(stream: Stream): Flow<SerializedEvent> {
+        return memory[stream]?.asFlow() ?: emptyFlow()
     }
 
     override suspend fun findEvent(eventId: EventId): SerializedEvent? {
-        return loadAll().find { it.id == eventId }
+        return memory.values.flatten().find { it.id == eventId }
     }
 
     override suspend fun processed(id: EventId, subscriberName: String) {

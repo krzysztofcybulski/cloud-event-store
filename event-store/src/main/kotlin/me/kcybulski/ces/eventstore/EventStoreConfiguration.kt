@@ -22,9 +22,9 @@ object EventStoreConfiguration {
 class EventStoreConfigurationBuilder {
 
 
-    private lateinit var tasksRepository: TasksRepository
-    private lateinit var eventsRepository: EventsRepository
-    private lateinit var serializer: EventSerializer
+    lateinit var tasksRepository: TasksRepository
+    lateinit var eventsRepository: EventsRepository
+    lateinit var serializer: EventSerializer
 
     init {
         inMemory()

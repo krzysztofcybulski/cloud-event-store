@@ -1,5 +1,8 @@
 package me.kcybulski.ces.eventstore.base
 
+import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import me.kcybulski.ces.eventstore.Event
 import me.kcybulski.ces.eventstore.EventId
 import me.kcybulski.ces.eventstore.EventSerializer
@@ -63,15 +66,20 @@ internal class BaseEventStore(
 
     override suspend fun read(readQuery: ReadQuery): EventStream =
         when (readQuery) {
-            AllEvents -> repository.loadAll().map { streamSerializedEvent(it) }
+            AllEvents -> repository
+                .loadAll()
+                .map { streamSerializedEvent(it) }
+
             is SpecificEvent -> repository
                 .findEvent(readQuery.eventId)
-                ?.let { listOf(streamSerializedEvent(it)) }
-                ?: emptyList()
+                ?.let { flowOf(streamSerializedEvent(it)) }
+                ?: emptyFlow<StreamedEvent<*>>()
 
-            is SpecificStream -> repository.loadStream(readQuery.stream).map { streamSerializedEvent(it) }
+            is SpecificStream -> repository
+                .loadStream(readQuery.stream)
+                .map { streamSerializedEvent(it) }
         }
-            .let { ListEventStream(it) }
+            .let { FlowEventStream(it) }
 
     private suspend fun streamSerializedEvent(serializedEvent: SerializedEvent) =
         StreamedEvent(
