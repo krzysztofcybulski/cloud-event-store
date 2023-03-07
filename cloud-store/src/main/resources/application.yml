@@ -2,11 +2,6 @@ eventstore:
   name: "Event Store"
 
 quarkus:
-  package:
-    type: native
-  native:
-    container-build: true
-    container-runtime: docker
   generate-code:
     grpc:
       scan-for-imports: none

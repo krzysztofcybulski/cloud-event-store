@@ -7,9 +7,10 @@ import me.kcybulski.ces.Response
 import me.kcybulski.ces.StreamingGrpc
 
 @GrpcService
-class EventStoreService : StreamingGrpc.StreamingImplBase() {
+class EventStoreService(
+    private val factory: MessageObserverFactory
+) : StreamingGrpc.StreamingImplBase() {
 
-    private val factory = MessageObserverFactory()
 
     override fun pipe(responseObserver: StreamObserver<Response>): StreamObserver<Message> =
         factory.observerFor(responseObserver)

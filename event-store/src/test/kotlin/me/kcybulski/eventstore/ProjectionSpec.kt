@@ -4,6 +4,7 @@ import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import me.kcybulski.ces.eventstore.EventStore
 import me.kcybulski.ces.eventstore.EventStoreConfiguration
+import me.kcybulski.ces.eventstore.EventStoreConfiguration.eventStore
 import me.kcybulski.ces.eventstore.ReadQuery.SpecificStream
 import me.kcybulski.ces.eventstore.Stream
 import me.kcybulski.eventstore.testdata.AddProductEvent
@@ -11,7 +12,7 @@ import me.kcybulski.eventstore.testdata.hasShoppingCartStream
 
 class ProjectionSpec : StringSpec({
 
-    val eventStore: EventStore = EventStoreConfiguration.inMemoryEventStoreWithCoroutineTasksProcessing()
+    val eventStore: EventStore = eventStore { }
 
     val myShoppingCart = "1001"
 

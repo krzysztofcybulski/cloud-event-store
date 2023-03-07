@@ -53,7 +53,7 @@ internal class BaseEventStore(
                 is SpecificSequenceNumber -> expectedSequenceNumber.number
             },
             payload = serializer.serialize(event.payload),
-            _class = event.javaClass.name
+            _class = event.className
         )
         return when (repository.save(serializedEvent)) {
             Saved -> Success(eventId)
@@ -78,7 +78,7 @@ internal class BaseEventStore(
             id = serializedEvent.id,
             timestamp = serializedEvent.timestamp,
             type = serializedEvent.type,
-            payload = serializer.deserialize(serializedEvent.payload, Class.forName(serializedEvent._class))
+            payload = serializer.deserialize(serializedEvent.payload, serializedEvent._class)
         )
 
     override suspend fun <T> subscribe(name: String, type: String, handler: suspend (T) -> Unit) {

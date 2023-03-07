@@ -46,5 +46,5 @@ internal class TasksProcessor(
     }
 
     private suspend fun deserialize(taskToProcess: SerializedEvent): Any =
-        serializer.deserialize(taskToProcess.payload, Class.forName(taskToProcess._class))
+        serializer.deserialize(taskToProcess.payload, taskToProcess._class)
 }

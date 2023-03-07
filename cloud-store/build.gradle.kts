@@ -4,6 +4,7 @@ plugins {
 }
 
 dependencies {
+    implementation(project(":event-store"))
     implementation(enforcedPlatform("io.quarkus.platform:quarkus-bom:2.13.1.Final"))
     implementation(enforcedPlatform("io.quarkus.platform:quarkus-google-cloud-services-bom:2.13.1.Final"))
     implementation("io.quarkus:quarkus-grpc")
@@ -15,21 +16,12 @@ dependencies {
     implementation("io.quarkus:quarkus-arc")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4")
     implementation("com.fasterxml.jackson.core:jackson-databind:2.14.0-rc3")
+    implementation("com.google.protobuf:protobuf-java-util:4.0.0-rc-2")
     testImplementation("io.quarkus:quarkus-junit5")
-}
-
-java {
-    sourceCompatibility = JavaVersion.VERSION_17
-    targetCompatibility = JavaVersion.VERSION_17
 }
 
 allOpen {
     annotation("javax.ws.rs.Path")
     annotation("javax.enterprise.context.ApplicationScoped")
     annotation("io.quarkus.test.junit.QuarkusTest")
-}
-
-tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
-    kotlinOptions.jvmTarget = JavaVersion.VERSION_17.toString()
-    kotlinOptions.javaParameters = true
 }

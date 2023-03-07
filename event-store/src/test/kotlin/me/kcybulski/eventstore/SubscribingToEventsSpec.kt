@@ -6,12 +6,13 @@ import io.kotest.matchers.collections.shouldHaveSingleElement
 import io.kotest.matchers.shouldBe
 import me.kcybulski.ces.eventstore.EventStore
 import me.kcybulski.ces.eventstore.EventStoreConfiguration
+import me.kcybulski.ces.eventstore.EventStoreConfiguration.eventStore
 import me.kcybulski.eventstore.testdata.AddProductEvent
 import kotlin.time.Duration.Companion.seconds
 
 class SubscribingToEventsSpec : StringSpec({
 
-    val eventStore: EventStore = EventStoreConfiguration.inMemoryEventStoreWithCoroutineTasksProcessing()
+    val eventStore: EventStore = eventStore { }
 
     val myShoppingCart = "1001"
 

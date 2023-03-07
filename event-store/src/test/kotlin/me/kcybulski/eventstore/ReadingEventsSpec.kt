@@ -4,7 +4,8 @@ import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import me.kcybulski.ces.eventstore.EventStore
-import me.kcybulski.ces.eventstore.EventStoreConfiguration.inMemoryEventStoreWithCoroutineTasksProcessing
+import me.kcybulski.ces.eventstore.EventStoreConfiguration
+import me.kcybulski.ces.eventstore.EventStoreConfiguration.eventStore
 import me.kcybulski.ces.eventstore.EventStream
 import me.kcybulski.ces.eventstore.ReadQuery.AllEvents
 import me.kcybulski.ces.eventstore.ReadQuery.SpecificEvent
@@ -15,7 +16,7 @@ import me.kcybulski.eventstore.testdata.hasShoppingCartStream
 
 class ReadingEventsSpec : StringSpec({
 
-    val eventStore: EventStore = inMemoryEventStoreWithCoroutineTasksProcessing()
+    val eventStore: EventStore = eventStore { }
 
     val myShoppingCart = "1001"
 

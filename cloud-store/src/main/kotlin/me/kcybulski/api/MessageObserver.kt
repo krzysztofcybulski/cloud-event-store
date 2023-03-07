@@ -1,10 +1,6 @@
 package me.kcybulski.api
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.google.protobuf.Any as ProtoAny
-import com.google.protobuf.Struct
-import com.google.protobuf.Timestamp
-import com.google.protobuf.util.JsonFormat
+import com.google.protobuf.util.Timestamps
 import io.grpc.stub.StreamObserver
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers.Default
@@ -14,17 +10,25 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import me.kcybulski.application.CommandsFacade
 import me.kcybulski.application.QueriesFacade
-import me.kcybulski.application.QueriesFacade.Event
-import me.kcybulski.ces.Command
-import me.kcybulski.ces.Command.CommandsCase.PUBLISH
-import me.kcybulski.ces.Events
+import me.kcybulski.ces.EventStream
+import me.kcybulski.ces.EventStreamQuery
+import me.kcybulski.ces.ExpectedSequenceNumber.KindCase.ANY
+import me.kcybulski.ces.ExpectedSequenceNumber.KindCase.SPECIFICSEQUENCENUMBER
 import me.kcybulski.ces.Message
-import me.kcybulski.ces.Message.MessageCase.COMMAND
-import me.kcybulski.ces.Message.MessageCase.QUERY
-import me.kcybulski.ces.Query
+import me.kcybulski.ces.Message.MessageCase.MESSAGE_NOT_SET
+import me.kcybulski.ces.Message.MessageCase.PUBLISH
+import me.kcybulski.ces.Message.MessageCase.STREAMQUERY
+import me.kcybulski.ces.PublishEvent
 import me.kcybulski.ces.Response
-import mu.KotlinLogging
-import java.time.Instant
+import me.kcybulski.ces.Stream.KindCase.GLOBAL
+import me.kcybulski.ces.Stream.KindCase.STREAMID
+import me.kcybulski.ces.eventstore.ExpectedSequenceNumber.AnySequenceNumber
+import me.kcybulski.ces.eventstore.ExpectedSequenceNumber.SpecificSequenceNumber
+import me.kcybulski.ces.eventstore.Stream
+import me.kcybulski.ces.eventstore.StreamedEvent
+import mu.KotlinLogging.logger
+import me.kcybulski.ces.ExpectedSequenceNumber.KindCase.KIND_NOT_SET as EXPECTED_SEQUENCE_KIND_NOT_SEND
+import me.kcybulski.ces.Stream.KindCase.KIND_NOT_SET as STREAM_KIND_NOT_SET
 
 class MessageObserver(
     private val queries: QueriesFacade,
@@ -33,21 +37,23 @@ class MessageObserver(
     private val scope: CoroutineScope
 ) : StreamObserver<Message> {
 
-    private val logger = KotlinLogging.logger {}
+    private val logger = logger {}
 
     override fun onNext(request: Message) {
         scope.launch {
             when (request.messageCase) {
-                QUERY ->
+                STREAMQUERY ->
                     queries
-                        .query(request.query.toQuery())
+                        .query(request.streamQuery.toQuery())
                         .onEach { responseObserver.onNext(response(it)) }
                         .collect()
-                COMMAND -> when (request.command.commandsCase) {
-                    PUBLISH -> commands.publishEvents(request.command.toPublishCommand())
-                    else -> {}
+
+                PUBLISH ->
+                    commands.publishEvents(request.publish.toPublishCommand())
+
+                MESSAGE_NOT_SET -> {
+                    logger.warn { "Not message $request.messageCase" }
                 }
-                else -> {}
             }
         }
     }
@@ -59,37 +65,27 @@ class MessageObserver(
     }
 
 
-    private fun response(event: Event): Response = Response
+    private fun response(event: StreamedEvent<*>): Response = Response
         .newBuilder()
-        .setEvent(
-            Events
+        .setEventStream(
+            EventStream
                 .newBuilder()
                 .addEvent(
-                    me.kcybulski.ces.Event
+                    me.kcybulski.ces.StreamedEvent
                         .newBuilder()
-                        .setId(event.id)
+                        .setId(event.id.raw)
                         .setType(event.type)
-                        .setStream(event.stream)
-                        .setPayload(ProtoAny.pack(fromJson(event.payload)))
+                        .setPayload(event.payload.toString())
+                        .setTimestamp(Timestamps.fromMillis(event.timestamp.toEpochMilli()))
                         .build()
                 )
         )
         .build()
-
-}
-
-val objectMapper = ObjectMapper()
-
-fun fromJson(obj: Any): com.google.protobuf.Message {
-    val builder = Struct.newBuilder()
-    println(objectMapper.writeValueAsString(obj))
-    JsonFormat.parser().ignoringUnknownFields().merge(objectMapper.writeValueAsString(obj), builder);
-    return builder.build()
 }
 
 class MessageObserverFactory(
-    private val queries: QueriesFacade = QueriesFacade(),
-    private val commands: CommandsFacade = CommandsFacade(),
+    private val queries: QueriesFacade,
+    private val commands: CommandsFacade,
     private val scope: CoroutineScope = CoroutineScope(Default + SupervisorJob())
 ) {
 
@@ -98,19 +94,19 @@ class MessageObserverFactory(
 
 }
 
-private fun Query.toQuery(): QueriesFacade.Query = QueriesFacade.Query(
-    streamIds = eventStreams.idList.toSet()
-)
+private fun EventStreamQuery.toQuery(): QueriesFacade.Query =
+    QueriesFacade.Query(Stream(id))
 
-private fun Command.toPublishCommand(): CommandsFacade.PublishEventsCommand = CommandsFacade.PublishEventsCommand(
-    events = publish.eventList.map { event ->
-        CommandsFacade.PublishEventsCommand.Event(
-            stream = event.id,
-            type = event.type,
-            timestamp = event.timestamp.toInstant(),
-            payload = event.payload
-        )
-    }.toList()
-)
-
-private fun Timestamp.toInstant() = Instant.ofEpochSecond(seconds, nanos.toLong())
+private fun PublishEvent.toPublishCommand(): CommandsFacade.PublishEventCommand =
+    CommandsFacade.PublishEventCommand(
+        stream = when (stream.kindCase) {
+            STREAMID -> Stream(stream.streamId)
+            GLOBAL, STREAM_KIND_NOT_SET -> Stream.GLOBAL
+        },
+        type = type,
+        payload = payload,
+        expectedSequenceNumber = when (expectedSequenceNumber.kindCase) {
+            SPECIFICSEQUENCENUMBER -> SpecificSequenceNumber(expectedSequenceNumber.specificSequenceNumber.toLong())
+            ANY, EXPECTED_SEQUENCE_KIND_NOT_SEND -> AnySequenceNumber
+        }
+    )

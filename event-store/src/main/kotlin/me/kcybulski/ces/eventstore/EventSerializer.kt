@@ -6,7 +6,15 @@ import com.fasterxml.jackson.databind.ObjectMapper
 interface EventSerializer {
 
     suspend fun <T> serialize(payload: T): String
-    suspend fun <T> deserialize(serialized: String, clazz: Class<T>): T
+    suspend fun deserialize(serialized: String, className: String): Any
+
+}
+
+internal class NoopSerializer(
+) : EventSerializer {
+    override suspend fun <T> serialize(payload: T): String = payload.toString()
+
+    override suspend fun deserialize(serialized: String, className: String): Any = serialized
 
 }
 
@@ -15,14 +23,14 @@ internal class JsonEventSerializer(
 ) : EventSerializer {
 
     init {
-        objectMapper.addMixIn(SimpleEvent::class.java, IgnoreSimpleEventPayload::class.java)
+        objectMapper.addMixIn(Event::class.java, IgnoreSimpleEventPayload::class.java)
     }
 
     override suspend fun <T> serialize(payload: T): String =
         objectMapper.writeValueAsString(payload)
 
-    override suspend fun <T> deserialize(serialized: String, clazz: Class<T>): T =
-        objectMapper.readValue(serialized, clazz)
+    override suspend fun deserialize(serialized: String, className: String): Any =
+        objectMapper.readValue(serialized, Class.forName(className)) as Any
 }
 
 internal abstract class IgnoreSimpleEventPayload {

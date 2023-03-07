@@ -1,6 +1,5 @@
 syntax = "proto3";
 import "google/protobuf/timestamp.proto";
-import "google/protobuf/any.proto";
 
 option java_multiple_files = true;
 option java_package = "me.kcybulski.ces";
@@ -8,55 +7,55 @@ option java_outer_classname = "EventStoreProto";
 
 package ces;
 
-message EventStream {
-    repeated Event event = 1;
+message Stream {
+  oneof kind {
+    string streamId = 1;
+    bool global = 2;
+  }
 }
 
-message EventStreamsQuery {
-    repeated string id = 1;
+message ExpectedSequenceNumber {
+  oneof kind {
+    int32 specificSequenceNumber = 1;
+    bool any = 2;
+  }
 }
 
-message Query {
-    oneof queries {
-        EventStreamsQuery eventStreams = 1;
-    }
+message EventStreamQuery {
+  string id = 1;
 }
 
-message PublishEvents {
-    repeated Event event = 1;
-}
-
-message Command {
-    oneof commands {
-        PublishEvents publish = 1;
-    }
+message PublishEvent {
+  Stream stream = 1;
+  ExpectedSequenceNumber expectedSequenceNumber = 2;
+  string type = 3;
+  string payload = 4;
 }
 
 message Message {
-    oneof message {
-        Query query = 1;
-        Command command = 2;
-    }
+  oneof message {
+    EventStreamQuery streamQuery = 1;
+    PublishEvent publish = 2;
+  }
 }
 
-message Event {
-    string id = 1;
-    string type = 2;
-    string stream = 3;
-    google.protobuf.Timestamp timestamp = 4;
-    google.protobuf.Any payload = 5;
+message StreamedEvent {
+  string id = 1;
+  string type = 2;
+  google.protobuf.Timestamp timestamp = 3;
+  string payload = 4;
 }
 
-message Events {
-    repeated Event event = 1;
+message EventStream {
+  repeated StreamedEvent event = 1;
 }
 
 message Response {
-    oneof responses {
-        Events event = 1;
-    }
+  oneof responses {
+    EventStream eventStream = 1;
+  }
 }
 
 service Streaming {
-    rpc Pipe(stream Message) returns (stream Response) {}
+  rpc Pipe(stream Message) returns (stream Response) {}
 }
