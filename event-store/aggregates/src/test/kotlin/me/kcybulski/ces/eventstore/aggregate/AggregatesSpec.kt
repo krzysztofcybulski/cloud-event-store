@@ -66,5 +66,20 @@ class AggregatesSpec : StringSpec({
         loaded.products shouldHaveSingleElement "Milk"
     }
 
+    "should use default constructor if missing companion object" {
+        //given
+        val aggregate = NoCompanionOrderAggregate.createNew()
+        aggregate.addProduct("Milk")
+        aggregates.save(aggregate)
+
+        //when
+        val loaded = aggregates
+            .load<NoCompanionOrderAggregate>(aggregate.stream)
+            .shouldNotBeNull()
+
+        //then
+        loaded.products shouldHaveSingleElement "Milk"
+    }
+
 })
 

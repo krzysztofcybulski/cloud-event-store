@@ -4,6 +4,7 @@ import me.kcybulski.ces.eventstore.Event
 import me.kcybulski.ces.eventstore.EventStore
 import me.kcybulski.ces.eventstore.ReadQuery.SpecificStream
 import me.kcybulski.ces.eventstore.Stream
+import kotlin.reflect.KParameter
 import kotlin.reflect.full.companionObjectInstance
 import kotlin.reflect.full.primaryConstructor
 
@@ -15,11 +16,11 @@ class Aggregates internal constructor(
         val events = eventStore
             .read(SpecificStream(stream))
             .collectList()
-        if(events.isEmpty()) return null
+        if (events.isEmpty()) return null
         val creator = T::class.companionObjectInstance as? AggregateCreator<T, Event<*>>
         val firstEvent: Event<*> = events.first().payload as Event<*>
         val aggregate = creator?.from(firstEvent)
-            ?: T::class.primaryConstructor?.call()
+            ?: T::class.constructors.find { it.parameters.all(KParameter::isOptional) }?.callBy(mapOf())
             ?: return null
         return events.drop(1).fold(aggregate) { agg, event -> agg.apply(event.payload as Event<*>) }
     }
@@ -28,6 +29,7 @@ class Aggregates internal constructor(
         aggregate
             .unpublishedEvents
             .forEach { eventStore.publish(it as Event<Any>, aggregate.stream) }
+        aggregate.unpublishedEvents.clear()
         return SaveAggregateResult.AggregateSaved(aggregate)
     }
 
@@ -39,6 +41,6 @@ class Aggregates internal constructor(
 
 sealed interface SaveAggregateResult {
 
-    data class AggregateSaved<T : Aggregate<T>>(val aggregate: T): SaveAggregateResult
+    data class AggregateSaved<T : Aggregate<T>>(val aggregate: T) : SaveAggregateResult
 
 }
