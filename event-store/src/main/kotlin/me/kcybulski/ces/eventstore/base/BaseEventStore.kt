@@ -86,6 +86,7 @@ internal class BaseEventStore(
             id = serializedEvent.id,
             timestamp = serializedEvent.timestamp,
             type = serializedEvent.type,
+            className = serializedEvent._class,
             payload = serializer.deserialize(serializedEvent.payload, serializedEvent._class)
         )
 

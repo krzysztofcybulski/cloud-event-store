@@ -4,6 +4,7 @@ import me.kcybulski.ces.eventstore.Event
 import me.kcybulski.ces.eventstore.SimpleEvent
 import me.kcybulski.ces.eventstore.Stream
 import me.kcybulski.ces.eventstore.aggregates.Aggregate
+import me.kcybulski.ces.eventstore.aggregates.AggregateCreator
 import java.util.UUID
 
 class MutableOrderAggregate(
@@ -24,16 +25,18 @@ class MutableOrderAggregate(
         return this
     }
 
-    companion object {
+    companion object: AggregateCreator<MutableOrderAggregate, OrderCreated> {
 
-        fun from(orderCreated: OrderCreated) = MutableOrderAggregate(orderCreated.id, mutableListOf())
+        override fun from(event: OrderCreated): MutableOrderAggregate {
+            return MutableOrderAggregate(event.id, mutableListOf())
+        }
 
         fun createNew(): MutableOrderAggregate {
             val id = UUID.randomUUID().toString()
             return MutableOrderAggregate(
                 id,
                 mutableListOf()
-            ).apply(OrderCreated(id))
+            ).event(OrderCreated(id))
         }
 
     }

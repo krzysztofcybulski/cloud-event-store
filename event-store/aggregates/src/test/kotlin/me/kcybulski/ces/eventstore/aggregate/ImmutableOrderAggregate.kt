@@ -3,6 +3,7 @@ package me.kcybulski.ces.eventstore.aggregate
 import me.kcybulski.ces.eventstore.Event
 import me.kcybulski.ces.eventstore.Stream
 import me.kcybulski.ces.eventstore.aggregates.Aggregate
+import me.kcybulski.ces.eventstore.aggregates.AggregateCreator
 import java.util.UUID
 
 class ImmutableOrderAggregate(
@@ -22,13 +23,13 @@ class ImmutableOrderAggregate(
             else -> this
         }
 
-    companion object {
+    companion object: AggregateCreator<ImmutableOrderAggregate, OrderCreated> {
 
-        fun from(orderCreated: OrderCreated) = ImmutableOrderAggregate(orderCreated.id, mutableListOf())
+        override fun from(event: OrderCreated) = ImmutableOrderAggregate(event.id, mutableListOf())
 
         fun createNew(): ImmutableOrderAggregate {
             val id = UUID.randomUUID().toString()
-            return ImmutableOrderAggregate(id, listOf()).apply(OrderCreated(id))
+            return ImmutableOrderAggregate(id, listOf()).event(OrderCreated(id))
         }
     }
 }
