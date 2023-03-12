@@ -21,9 +21,15 @@ class Aggregates internal constructor(
         aggregate
             .unpublishedEvents
             .forEach { eventStore.publish(it as Event<Any>, aggregate.stream) }
-        aggregate.unpublishedEvents.clear()
-        return SaveAggregateResult.AggregateSaved(aggregate)
+        aggregate.unpublishedEvents = listOf()
+        return AggregateSaved(aggregate)
     }
+
+    suspend inline fun <reified T : Aggregate<T>> update(stream: Stream, update: (T) -> T): UpdateAggregateResult =
+        load<T>(stream)
+            ?.let(update)
+            ?.let { save(it) as UpdateAggregateResult }
+            ?: NoAggregateFound(stream)
 
     suspend fun readEvents(stream: Stream) = eventStore
         .read(SpecificStream(stream))
@@ -31,7 +37,7 @@ class Aggregates internal constructor(
         .map { it.payload as Event<*> }
         .takeIf { it.isNotEmpty() }
         ?.let { it.first() to it.drop(1) }
-    
+
     inline fun <reified T : Aggregate<T>> initialState(initialEvent: Event<*>): T? =
         T::class.aggregateCreator
             ?.from(initialEvent)
@@ -43,11 +49,12 @@ class Aggregates internal constructor(
     }
 }
 
-sealed interface SaveAggregateResult {
+sealed interface SaveAggregateResult
+sealed interface UpdateAggregateResult
 
-    data class AggregateSaved<T : Aggregate<T>>(val aggregate: T) : SaveAggregateResult
+data class AggregateSaved<T : Aggregate<T>>(val aggregate: T) : SaveAggregateResult, UpdateAggregateResult
+data class NoAggregateFound(val stream: Stream) : UpdateAggregateResult
 
-}
 
 inline val <reified T : Aggregate<T>> KClass<T>.aggregateCreator
     get() = T::class.companionObjectInstance as? AggregateCreator<T, Event<*>>

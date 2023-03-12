@@ -5,8 +5,8 @@ import io.kotest.matchers.collections.shouldHaveSingleElement
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.types.shouldBeInstanceOf
 import me.kcybulski.ces.eventstore.EventStoreConfiguration.eventStore
+import me.kcybulski.ces.eventstore.aggregates.AggregateSaved
 import me.kcybulski.ces.eventstore.aggregates.Aggregates
-import me.kcybulski.ces.eventstore.aggregates.SaveAggregateResult.AggregateSaved
 
 class AggregatesSpec : StringSpec({
 
@@ -53,8 +53,9 @@ class AggregatesSpec : StringSpec({
 
     "should load immutable aggregate" {
         //given
-        val aggregate = ImmutableOrderAggregate.createNew()
-        aggregate.addProduct("Milk")
+        val aggregate = ImmutableOrderAggregate
+            .createNew()
+            .addProduct("Milk")
         aggregates.save(aggregate)
 
         //when
@@ -78,6 +79,25 @@ class AggregatesSpec : StringSpec({
             .shouldNotBeNull()
 
         //then
+        loaded.products shouldHaveSingleElement "Milk"
+    }
+
+    "should update aggregate" {
+        //given
+        val aggregate = ImmutableOrderAggregate.createNew()
+        aggregates.save(aggregate)
+
+        //when
+        val result = aggregates.update<ImmutableOrderAggregate>(aggregate.stream) {
+            it.addProduct("Milk")
+        }
+
+        //then
+        result.shouldBeInstanceOf<AggregateSaved<*>>()
+        //and
+        val loaded = aggregates
+            .load<ImmutableOrderAggregate>(aggregate.stream)
+            .shouldNotBeNull()
         loaded.products shouldHaveSingleElement "Milk"
     }
 
