@@ -6,11 +6,9 @@ import me.kcybulski.ces.eventstore.aggregates.Aggregate
 import java.util.UUID
 
 class NoCompanionOrderAggregate @JvmOverloads constructor(
-    var id: String = ""
-) : Aggregate<NoCompanionOrderAggregate>() {
-
-//    var id: String = ""
+    var id: String = "",
     var products: MutableList<String> = mutableListOf()
+) : Aggregate<NoCompanionOrderAggregate>() {
 
     override val stream = Stream(id)
 
