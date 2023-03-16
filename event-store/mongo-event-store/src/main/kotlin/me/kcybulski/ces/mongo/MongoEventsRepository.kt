@@ -9,8 +9,10 @@ import me.kcybulski.ces.eventstore.SerializedEvent
 import me.kcybulski.ces.eventstore.Stream
 import me.kcybulski.ces.eventstore.tasks.TasksRepository
 import org.bson.codecs.pojo.annotations.BsonId
+import org.litote.kmongo.and
 import org.litote.kmongo.coroutine.CoroutineDatabase
 import org.litote.kmongo.eq
+import org.litote.kmongo.gte
 import org.litote.kmongo.ne
 import org.litote.kmongo.pull
 import java.time.Instant
@@ -29,8 +31,16 @@ internal class MongoEventsRepository(
     override suspend fun loadAll(): Flow<SerializedEvent> =
         events.find().toFlow().map { it.asSerializedEvent() }
 
-    override suspend fun loadStream(stream: Stream): Flow<SerializedEvent> =
-        events.find(MongoEvent::stream eq stream.id).toFlow().map { it.asSerializedEvent() }
+    override suspend fun loadStreamFrom(stream: Stream, from: Long): Flow<SerializedEvent> =
+        events
+            .find(
+                and(
+                    MongoEvent::stream eq stream.id,
+                    MongoEvent::sequenceNumber gte from
+                )
+            )
+            .toFlow()
+            .map { it.asSerializedEvent() }
 
     override suspend fun findEvent(eventId: EventId): SerializedEvent? =
         events.findOne(MongoEvent::id eq eventId.raw)?.asSerializedEvent()

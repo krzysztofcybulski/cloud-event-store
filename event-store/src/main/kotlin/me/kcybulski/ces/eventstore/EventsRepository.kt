@@ -8,7 +8,7 @@ interface EventsRepository {
     suspend fun save(event: SerializedEvent): SaveEventResult
 
     suspend fun loadAll(): Flow<SerializedEvent>
-    suspend fun loadStream(stream: Stream): Flow<SerializedEvent>
+    suspend fun loadStreamFrom(stream: Stream, from: Long = 0): Flow<SerializedEvent>
     suspend fun findEvent(eventId: EventId): SerializedEvent?
 
 }

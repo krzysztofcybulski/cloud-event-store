@@ -2,6 +2,7 @@ package me.kcybulski.ces.eventstore.base
 
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.asFlow
+import kotlinx.coroutines.flow.dropWhile
 import kotlinx.coroutines.flow.emptyFlow
 import me.kcybulski.ces.eventstore.EventId
 import me.kcybulski.ces.eventstore.EventsRepository
@@ -13,7 +14,7 @@ import me.kcybulski.ces.eventstore.Stream
 import me.kcybulski.ces.eventstore.tasks.TasksRepository
 import java.util.concurrent.ConcurrentHashMap
 
-class InMemoryEventsRepository : EventsRepository, TasksRepository {
+internal class InMemoryEventsRepository : EventsRepository, TasksRepository {
 
     private val memory: ConcurrentHashMap<Stream, List<SerializedEvent>> = ConcurrentHashMap()
 
@@ -34,8 +35,8 @@ class InMemoryEventsRepository : EventsRepository, TasksRepository {
         return memory.values.flatten().asFlow()
     }
 
-    override suspend fun loadStream(stream: Stream): Flow<SerializedEvent> {
-        return memory[stream]?.asFlow() ?: emptyFlow()
+    override suspend fun loadStreamFrom(stream: Stream, from: Long): Flow<SerializedEvent> {
+        return memory[stream]?.asFlow()?.dropWhile { it.sequenceNumber!! < from } ?: emptyFlow()
     }
 
     override suspend fun findEvent(eventId: EventId): SerializedEvent? {

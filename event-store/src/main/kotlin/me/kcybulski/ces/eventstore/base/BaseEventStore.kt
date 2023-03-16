@@ -76,7 +76,7 @@ internal class BaseEventStore(
                 ?: emptyFlow<StreamedEvent<*>>()
 
             is SpecificStream -> repository
-                .loadStream(readQuery.stream)
+                .loadStreamFrom(readQuery.stream)
                 .map { streamSerializedEvent(it) }
         }
             .let { FlowEventStream(it) }
