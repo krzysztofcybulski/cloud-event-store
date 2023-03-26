@@ -1,7 +1,9 @@
 package me.kcybulski.ces.eventstore.tasks
 
+import me.kcybulski.ces.eventstore.Event
 import me.kcybulski.ces.eventstore.EventSerializer
 import me.kcybulski.ces.eventstore.SerializedEvent
+import me.kcybulski.ces.eventstore.StreamedEvent
 import me.kcybulski.ces.eventstore.tasks.RunHandlerResult.ErrorWhileHandling
 import me.kcybulski.ces.eventstore.tasks.RunHandlerResult.HandledSuccessfully
 import mu.KotlinLogging.logger
@@ -26,8 +28,7 @@ internal class TasksProcessor(
         val subscriberName = taskToProcess.subscribers.first()
         val handlerResult = subscriptionsRegistry.runSubscriptionFor(
             name = subscriberName,
-            type = taskToProcess.type,
-            payload = deserialize(taskToProcess)
+            event = taskToProcess.asStreamedEvent(serializer)
         )
         when (handlerResult) {
             is ErrorWhileHandling -> {
@@ -44,7 +45,10 @@ internal class TasksProcessor(
             }
         }
     }
-
-    private suspend fun deserialize(taskToProcess: SerializedEvent): Any =
-        serializer.deserialize(taskToProcess.payload, taskToProcess._class)
 }
+
+internal class TaskEvent(
+    override val type: String,
+    override val payload: Any,
+    override val className: String
+) : Event<Any>

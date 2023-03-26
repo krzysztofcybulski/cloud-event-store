@@ -19,7 +19,7 @@ internal class CoroutinesTaskProcessingScheduler(
         this.job = coroutine.launch {
             while (true) {
                 tasksProcessor.processNext()
-                delay(20.milliseconds)
+                delay(100.milliseconds)
             }
         }
     }

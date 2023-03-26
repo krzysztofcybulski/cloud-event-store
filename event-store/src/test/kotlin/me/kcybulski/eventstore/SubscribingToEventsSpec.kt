@@ -22,7 +22,7 @@ class SubscribingToEventsSpec : StringSpec({
 
         //and
         eventStore.subscribe<AddProductEvent>("sub-1", "AddProductEvent")
-        { productAdded -> consumedProducts += productAdded.productName }
+        { productAdded -> consumedProducts += productAdded.payload.productName }
 
         //when
         eventStore.publish(AddProductEvent(myShoppingCart, "Milk"))
@@ -40,7 +40,7 @@ class SubscribingToEventsSpec : StringSpec({
 
         //and
         eventStore.subscribe<AddProductEvent>("sub-1", "AddProductEvent")
-        { productAdded -> consumedProducts += productAdded.productName }
+        { productAdded -> consumedProducts += productAdded.payload.productName }
 
         //and
         eventStore.subscribe<AddProductEvent>("sub-2", "AddProductEvent")
@@ -49,7 +49,7 @@ class SubscribingToEventsSpec : StringSpec({
                 errorsCounter++
                 throw IllegalStateException("Error while handling")
             } else {
-                consumedProducts += productAdded.productName
+                consumedProducts += productAdded.payload.productName
             }
         }
 

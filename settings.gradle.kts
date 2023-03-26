@@ -5,3 +5,5 @@ findProject(":event-store:aggregates")?.name = "aggregates"
 include("cloud-store")
 include("event-store:mongo-event-store")
 findProject(":event-store:mongo-event-store")?.name = "mongo-event-store"
+include("event-store:management")
+findProject(":event-store:management")?.name = "management"

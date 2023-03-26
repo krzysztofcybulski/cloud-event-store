@@ -16,6 +16,7 @@ interface EventStream {
 data class StreamedEvent<T : Any>(
     val id: EventId,
     val timestamp: Instant,
+    val stream: Stream,
     override val type: String,
     override val className: String,
     override val payload: T

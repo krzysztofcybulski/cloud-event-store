@@ -68,29 +68,20 @@ internal class BaseEventStore(
         when (readQuery) {
             AllEvents -> repository
                 .loadAll()
-                .map { streamSerializedEvent(it) }
+                .map { it.asStreamedEvent(serializer) }
 
             is SpecificEvent -> repository
                 .findEvent(readQuery.eventId)
-                ?.let { flowOf(streamSerializedEvent(it)) }
+                ?.let { flowOf(it.asStreamedEvent(serializer)) }
                 ?: emptyFlow<StreamedEvent<*>>()
 
             is SpecificStream -> repository
                 .loadStreamFrom(readQuery.stream)
-                .map { streamSerializedEvent(it) }
+                .map { it.asStreamedEvent(serializer) }
         }
             .let { FlowEventStream(it) }
 
-    private suspend fun streamSerializedEvent(serializedEvent: SerializedEvent) =
-        StreamedEvent(
-            id = serializedEvent.id,
-            timestamp = serializedEvent.timestamp,
-            type = serializedEvent.type,
-            className = serializedEvent._class,
-            payload = serializer.deserialize(serializedEvent.payload, serializedEvent._class)
-        )
-
-    override suspend fun <T> subscribe(name: String, type: String, handler: suspend (T) -> Unit) {
+    override suspend fun <T: Any> subscribe(name: String, type: String, handler: suspend (StreamedEvent<T>) -> Unit) {
         subscriptionsRegistry.subscribe(name, type, handler)
     }
 }

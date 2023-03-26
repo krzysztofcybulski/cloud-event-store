@@ -14,8 +14,9 @@ class CommandsFacade(
 
     private val logger = KotlinLogging.logger {}
 
-    suspend fun publishEvents(command: PublishEventCommand) {
-        logger.info { "Processing publish event command: $command" }
+    suspend fun publish(command: PublishEventCommand) {
+        logger.info { "Publishing ${command.type} event to ${command.stream}" }
+        logger.debug { "Publishing event: ${command.payload}" }
         eventStore.publish(
             event = CloudEvent(command.type, command.payload),
             stream = command.stream,

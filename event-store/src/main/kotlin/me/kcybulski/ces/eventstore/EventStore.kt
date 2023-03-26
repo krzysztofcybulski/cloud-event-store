@@ -14,10 +14,10 @@ interface EventStore {
 
     suspend fun read(readQuery: ReadQuery): EventStream
 
-    suspend fun <T> subscribe(
+    suspend fun <T: Any> subscribe(
         name: String,
         type: String,
-        handler: suspend (T) -> Unit
+        handler: suspend (StreamedEvent<T>) -> Unit
     )
 
 }

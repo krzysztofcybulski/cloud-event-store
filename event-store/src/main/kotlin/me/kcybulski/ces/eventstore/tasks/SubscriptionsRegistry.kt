@@ -1,5 +1,7 @@
 package me.kcybulski.ces.eventstore.tasks
 
+import me.kcybulski.ces.eventstore.Event
+import me.kcybulski.ces.eventstore.StreamedEvent
 import me.kcybulski.ces.eventstore.tasks.RunHandlerResult.ErrorWhileHandling
 import me.kcybulski.ces.eventstore.tasks.RunHandlerResult.HandledSuccessfully
 import me.kcybulski.ces.eventstore.tasks.RunHandlerResult.NoHandlerFound
@@ -10,19 +12,20 @@ internal class SubscriptionsRegistry {
 
     private val subscribers: MutableList<Subscriber> = mutableListOf()
 
-    suspend fun <T> subscribe(name: String, type: String, handler: suspend (T) -> Unit) {
+    suspend fun <T: Any> subscribe(name: String, type: String, handler: suspend (StreamedEvent<T>) -> Unit) {
         logger.info { "Registering subscriber for $type" }
-        subscribers += Subscriber(type, name, handler as suspend (Any) -> Unit)
+        subscribers += Subscriber(type, name, handler as suspend (StreamedEvent<Any>) -> Unit)
     }
 
     suspend fun subscribersNamesForType(type: String): List<String> {
-        return subscribers.filter { it.eventType == type }.map { it.name }
+        return subscribers.filter { it.eventType == type || it.eventType == "*" }.map { it.name }
     }
 
-    suspend fun runSubscriptionFor(name: String, type: String, payload: Any): RunHandlerResult {
-        val subscriber = subscribers.find { it.name == name && it.eventType == type } ?: return NoHandlerFound
+    suspend fun runSubscriptionFor(name: String, event: StreamedEvent<Any>): RunHandlerResult {
+        logger.info { "Name: $name, subscribers: $subscribers" }
+        val subscriber = subscribers.find { it.name == name } ?: return NoHandlerFound
         return try {
-            subscriber.handler(payload)
+            subscriber.handler(event)
             HandledSuccessfully(subscriber.name)
         } catch (cause: Throwable) {
             ErrorWhileHandling(cause)
@@ -39,8 +42,8 @@ sealed interface RunHandlerResult {
 
 }
 
-internal class Subscriber(
+internal data class Subscriber(
     val eventType: String,
     val name: String,
-    val handler: suspend (Any) -> Unit
+    val handler: suspend (StreamedEvent<Any>) -> Unit
 )

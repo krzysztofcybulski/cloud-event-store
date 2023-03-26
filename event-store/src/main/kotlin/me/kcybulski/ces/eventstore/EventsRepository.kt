@@ -29,7 +29,18 @@ data class SerializedEvent(
     val sequenceNumber: Long?,
     val payload: String,
     val _class: String
-)
+) {
+
+    suspend fun asStreamedEvent(serializer: EventSerializer) =
+        StreamedEvent(
+            id = id,
+            timestamp = timestamp,
+            stream = stream,
+            type = type,
+            className = _class,
+            payload = serializer.deserialize(payload, _class)
+        )
+}
 
 @JvmInline
 value class EventId(val raw: String)

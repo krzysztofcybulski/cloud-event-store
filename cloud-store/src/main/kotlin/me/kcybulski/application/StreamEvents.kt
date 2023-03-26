@@ -10,20 +10,16 @@ import mu.KotlinLogging
 import javax.enterprise.context.ApplicationScoped
 
 @ApplicationScoped
-class QueriesFacade(
+class StreamEvents(
     private val eventStore: EventStore
 ) {
 
     private val logger = KotlinLogging.logger {}
 
-    suspend fun query(query: Query): Flow<StreamedEvent<*>> {
-        logger.info { "Processing query: $query" }
-        return eventStore.read(ReadQuery.SpecificStream(query.streamId))
+    suspend fun streamEvents(streamId: Stream): Flow<StreamedEvent<*>> {
+        logger.debug { "Streaming events from $streamId" }
+        return eventStore.read(ReadQuery.SpecificStream(streamId))
             .collectList()
             .asFlow()
     }
-
-    data class Query(
-        val streamId: Stream
-    )
 }

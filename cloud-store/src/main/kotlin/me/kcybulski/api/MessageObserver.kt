@@ -5,13 +5,11 @@ import io.grpc.stub.StreamObserver
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers.Default
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
 import me.kcybulski.application.CommandsFacade
-import me.kcybulski.application.QueriesFacade
+import me.kcybulski.application.StreamEvents
 import me.kcybulski.ces.EventStream
-import me.kcybulski.ces.EventStreamQuery
 import me.kcybulski.ces.ExpectedSequenceNumber.KindCase.ANY
 import me.kcybulski.ces.ExpectedSequenceNumber.KindCase.SPECIFICSEQUENCENUMBER
 import me.kcybulski.ces.Message
@@ -31,7 +29,7 @@ import me.kcybulski.ces.ExpectedSequenceNumber.KindCase.KIND_NOT_SET as EXPECTED
 import me.kcybulski.ces.Stream.KindCase.KIND_NOT_SET as STREAM_KIND_NOT_SET
 
 class MessageObserver(
-    private val queries: QueriesFacade,
+    private val queries: StreamEvents,
     private val commands: CommandsFacade,
     private val responseObserver: StreamObserver<Response>,
     private val scope: CoroutineScope
@@ -44,14 +42,18 @@ class MessageObserver(
             when (request.messageCase) {
                 STREAMQUERY ->
                     queries
-                        .query(request.streamQuery.toQuery())
-                        .onEach { responseObserver.onNext(response(it)) }
-                        .collect()
+                        .streamEvents(Stream(request.streamQuery.id))
+                        .toList()
+                        .let {
+                            responseObserver.onNext(
+                                response(it)
+                            )
+                        }
 
                 PUBLISH ->
-                    commands.publishEvents(request.publish.toPublishCommand())
+                    commands.publish(request.publish.toPublishCommand())
 
-                MESSAGE_NOT_SET -> {
+                MESSAGE_NOT_SET, null -> {
                     logger.warn { "Not message $request.messageCase" }
                 }
             }
@@ -65,26 +67,28 @@ class MessageObserver(
     }
 
 
-    private fun response(event: StreamedEvent<*>): Response = Response
+    private fun response(event: List<StreamedEvent<*>>): Response = Response
         .newBuilder()
         .setEventStream(
             EventStream
                 .newBuilder()
-                .addEvent(
-                    me.kcybulski.ces.StreamedEvent
-                        .newBuilder()
-                        .setId(event.id.raw)
-                        .setType(event.type)
-                        .setPayload(event.payload.toString())
-                        .setTimestamp(Timestamps.fromMillis(event.timestamp.toEpochMilli()))
-                        .build()
+                .addAllEvent(
+                    event.map { event ->
+                        me.kcybulski.ces.StreamedEvent
+                            .newBuilder()
+                            .setId(event.id.raw)
+                            .setType(event.type)
+                            .setPayload(event.payload.toString())
+                            .setTimestamp(Timestamps.fromMillis(event.timestamp.toEpochMilli()))
+                            .build()
+                    }
                 )
         )
         .build()
 }
 
 class MessageObserverFactory(
-    private val queries: QueriesFacade,
+    private val queries: StreamEvents,
     private val commands: CommandsFacade,
     private val scope: CoroutineScope = CoroutineScope(Default + SupervisorJob())
 ) {
@@ -94,19 +98,16 @@ class MessageObserverFactory(
 
 }
 
-private fun EventStreamQuery.toQuery(): QueriesFacade.Query =
-    QueriesFacade.Query(Stream(id))
-
 private fun PublishEvent.toPublishCommand(): CommandsFacade.PublishEventCommand =
     CommandsFacade.PublishEventCommand(
         stream = when (stream.kindCase) {
             STREAMID -> Stream(stream.streamId)
-            GLOBAL, STREAM_KIND_NOT_SET -> Stream.GLOBAL
+            GLOBAL, STREAM_KIND_NOT_SET, null -> Stream.GLOBAL
         },
         type = type,
         payload = payload,
         expectedSequenceNumber = when (expectedSequenceNumber.kindCase) {
             SPECIFICSEQUENCENUMBER -> SpecificSequenceNumber(expectedSequenceNumber.specificSequenceNumber.toLong())
-            ANY, EXPECTED_SEQUENCE_KIND_NOT_SEND -> AnySequenceNumber
+            ANY, EXPECTED_SEQUENCE_KIND_NOT_SEND, null -> AnySequenceNumber
         }
     )

@@ -5,3 +5,5 @@ quarkus:
   generate-code:
     grpc:
       scan-for-imports: none
+  naming:
+    enable-jndi: true
