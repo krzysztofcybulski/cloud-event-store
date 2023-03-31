@@ -25,7 +25,7 @@ import me.kcybulski.ces.eventstore.SerializedEvent
 import me.kcybulski.ces.eventstore.Stream
 import me.kcybulski.ces.eventstore.StreamedEvent
 import me.kcybulski.ces.eventstore.tasks.SubscriptionsRegistry
-import mu.KotlinLogging.logger
+import mu.KLogging
 import java.time.Clock
 import java.util.UUID.randomUUID
 
@@ -35,8 +35,6 @@ internal class BaseEventStore(
     private val subscriptionsRegistry: SubscriptionsRegistry,
     private val clock: Clock
 ) : EventStore {
-
-    private val logger = logger { }
 
     override suspend fun <A : Any> publish(
         event: Event<A>,
@@ -81,7 +79,9 @@ internal class BaseEventStore(
         }
             .let { FlowEventStream(it) }
 
-    override suspend fun <T: Any> subscribe(name: String, type: String, handler: suspend (StreamedEvent<T>) -> Unit) {
+    override suspend fun <T : Any> subscribe(name: String, type: String, handler: suspend (StreamedEvent<T>) -> Unit) {
         subscriptionsRegistry.subscribe(name, type, handler)
     }
+
+    companion object : KLogging()
 }

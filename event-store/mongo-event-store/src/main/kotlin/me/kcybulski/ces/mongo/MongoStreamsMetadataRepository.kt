@@ -17,7 +17,7 @@ internal class MongoStreamsMetadataRepository(
 
     private val streams = database.getCollection<StreamMetadata>("streams")
 
-    override suspend fun updateStream(id: Stream): StreamMetadata {
+    override suspend fun incrementStreamSize(id: Stream): StreamMetadata {
         return streams.findOneAndUpdate(
             filter = StreamMetadata::id eq StringId(id.id),
             update = inc(StreamMetadata::size, 1),

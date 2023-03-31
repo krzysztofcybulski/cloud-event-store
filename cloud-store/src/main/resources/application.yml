@@ -1,9 +1,0 @@
-eventstore:
-  name: "Event Store"
-
-quarkus:
-  generate-code:
-    grpc:
-      scan-for-imports: none
-  naming:
-    enable-jndi: true

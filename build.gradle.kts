@@ -26,7 +26,7 @@ subprojects {
 
         // Production deps
         implementation("io.github.microutils:kotlin-logging:3.0.5")
-        implementation("org.slf4j:slf4j-simple:2.0.6")
+        implementation("org.slf4j:slf4j-simple:2.0.7")
 
         // Test deps
         testImplementation("io.kotest:kotest-runner-junit5-jvm:5.5.5")

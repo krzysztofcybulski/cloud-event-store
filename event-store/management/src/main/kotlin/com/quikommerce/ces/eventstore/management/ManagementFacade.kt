@@ -4,22 +4,17 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.runBlocking
 import me.kcybulski.ces.eventstore.EventStore
 import me.kcybulski.ces.eventstore.Stream
-import mu.KotlinLogging.logger
-import kotlin.math.log
+import mu.KLogging
 
 class ManagementFacade(
     private val repository: StreamsMetadataRepository,
     eventStore: EventStore
 ) {
-
-    private val logger = logger { }
-
     init {
         runBlocking {
-            logger.info { "Registering" }
             eventStore.subscribe<Any>("metadata", "*") {
                 logger.info { "Updating stream ${it.stream.id} metadata" }
-                repository.updateStream(it.stream)
+                repository.incrementStreamSize(it.stream)
             }
         }
     }
@@ -29,4 +24,6 @@ class ManagementFacade(
 
     suspend fun findStreams(type: String?): Flow<StreamMetadata> =
         repository.findStreams(type)
+
+    companion object: KLogging()
 }

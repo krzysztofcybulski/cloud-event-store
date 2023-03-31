@@ -1,14 +1,12 @@
 package me.kcybulski.ces.eventstore.tasks
 
-import me.kcybulski.ces.eventstore.Event
 import me.kcybulski.ces.eventstore.StreamedEvent
 import me.kcybulski.ces.eventstore.tasks.RunHandlerResult.ErrorWhileHandling
 import me.kcybulski.ces.eventstore.tasks.RunHandlerResult.HandledSuccessfully
 import me.kcybulski.ces.eventstore.tasks.RunHandlerResult.NoHandlerFound
-import mu.KotlinLogging
+import mu.KLogging
 
 internal class SubscriptionsRegistry {
-    private val logger = KotlinLogging.logger { }
 
     private val subscribers: MutableList<Subscriber> = mutableListOf()
 
@@ -31,6 +29,8 @@ internal class SubscriptionsRegistry {
             ErrorWhileHandling(cause)
         }
     }
+
+    companion object: KLogging()
 
 }
 

@@ -3,18 +3,15 @@ package me.kcybulski.ces.eventstore.tasks
 import me.kcybulski.ces.eventstore.Event
 import me.kcybulski.ces.eventstore.EventSerializer
 import me.kcybulski.ces.eventstore.SerializedEvent
-import me.kcybulski.ces.eventstore.StreamedEvent
 import me.kcybulski.ces.eventstore.tasks.RunHandlerResult.ErrorWhileHandling
 import me.kcybulski.ces.eventstore.tasks.RunHandlerResult.HandledSuccessfully
-import mu.KotlinLogging.logger
+import mu.KLogging
 
 internal class TasksProcessor(
     private val repository: TasksRepository,
     private val serializer: EventSerializer,
     private val subscriptionsRegistry: SubscriptionsRegistry
 ) {
-
-    private val logger = logger { }
 
     suspend fun processNext() {
         val taskToProcess = repository.findUnprocessedTask()
@@ -45,10 +42,6 @@ internal class TasksProcessor(
             }
         }
     }
-}
 
-internal class TaskEvent(
-    override val type: String,
-    override val payload: Any,
-    override val className: String
-) : Event<Any>
+    companion object: KLogging()
+}

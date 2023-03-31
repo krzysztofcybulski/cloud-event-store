@@ -54,5 +54,4 @@ internal class InMemoryEventsRepository : EventsRepository, TasksRepository {
     override suspend fun findUnprocessedTask(): SerializedEvent? {
         return memory.values.flatten().find { it.subscribers.isNotEmpty() }
     }
-
 }

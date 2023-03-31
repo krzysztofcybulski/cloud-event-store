@@ -27,4 +27,7 @@ internal class FlowEventStream(
         streamedEvents
             .map { it.payload }
             .fold(initial, mapper)
+
+    override suspend fun flow(): Flow<StreamedEvent<*>> =
+        streamedEvents
 }

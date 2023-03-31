@@ -1,0 +1,72 @@
+syntax = "proto3";
+import "google/protobuf/timestamp.proto";
+
+option java_multiple_files = true;
+option java_package = "me.kcybulski.ces";
+option java_outer_classname = "EventStoreProto";
+
+package ces;
+
+service EventStore {
+  rpc Stream(StreamMessage) returns (stream StreamedEvent) {}
+  rpc Publish(PublishCommand) returns (PublishResult) {}
+}
+
+message StreamMessage {
+
+  oneof message {
+    EventStreamQuery streamQuery = 1;
+  }
+
+  message EventStreamQuery {
+    string id = 1;
+  }
+}
+
+message StreamedEvent {
+  string id = 1;
+  string type = 2;
+  string streamId = 3;
+  google.protobuf.Timestamp timestamp = 4;
+  string className = 5;
+  string payload = 6;
+}
+
+message PublishCommand {
+  oneof command {
+    PublishEvent publish = 1;
+    PublishEvent append = 2;
+  }
+
+  message PublishEvent {
+    Stream stream = 1;
+    ExpectedSequenceNumber expectedSequenceNumber = 2;
+    string type = 3;
+    string className = 4;
+    string payload = 5;
+
+    message Stream {
+      oneof kind {
+        string streamId = 1;
+        bool global = 2;
+      }
+    }
+
+    message ExpectedSequenceNumber {
+      oneof kind {
+        int32 specificSequenceNumber = 1;
+        bool any = 2;
+      }
+    }
+  }
+}
+
+message PublishResult {
+  oneof results {
+    PublishedSuccessfully success = 1;
+  }
+
+  message PublishedSuccessfully {
+    string eventId = 1;
+  }
+}
