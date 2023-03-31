@@ -1,8 +1,10 @@
 package me.kcybulski.ces.client
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.databind.ObjectMapper
 import me.kcybulski.ces.PublishCommandKt
 import me.kcybulski.ces.PublishCommandKt.PublishEventKt.expectedSequenceNumber
+import me.kcybulski.ces.PublishCommandKt.PublishEventKt.stream
 import me.kcybulski.ces.PublishCommandKt.publishEvent
 import me.kcybulski.ces.PublishResult
 import me.kcybulski.ces.StreamMessage
@@ -20,7 +22,11 @@ import me.kcybulski.ces.publishCommand
 import me.kcybulski.ces.streamMessage
 import java.time.Instant
 
-class GrpcMappers(private val objectMapper: ObjectMapper) {
+internal class GrpcMappers(private val objectMapper: ObjectMapper) {
+
+    init {
+        objectMapper.addMixIn(Event::class.java, IgnoreSimpleEventPayload::class.java)
+    }
 
     fun streamedEvent(event: StreamedEvent) =
         me.kcybulski.ces.eventstore.StreamedEvent(
@@ -71,12 +77,23 @@ class GrpcMappers(private val objectMapper: ObjectMapper) {
             }
         }
 
-    private fun streamRequest(eventStream: Stream) = PublishCommandKt.PublishEventKt.stream {
-        if (eventStream == Stream.GLOBAL) {
-            global = true
-        } else {
-            streamId = eventStream.id
+    private fun streamRequest(eventStream: Stream) =
+        stream {
+            if (eventStream == Stream.GLOBAL) {
+                global = true
+            } else {
+                streamId = eventStream.id
+            }
         }
-    }
+}
+
+
+internal abstract class IgnoreSimpleEventPayload {
+
+    @get:JsonIgnore
+    abstract val payload: Any
+
+    @get:JsonIgnore
+    abstract val type: Any
 
 }

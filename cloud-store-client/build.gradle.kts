@@ -6,7 +6,6 @@ plugins {
 
 dependencies {
     api(project(":event-store"))
-    api(project(":event-store:aggregates"))
     implementation("io.grpc:grpc-kotlin-stub:1.3.0")
     implementation("io.grpc:grpc-protobuf:1.54.0")
     implementation("io.grpc:grpc-netty:1.54.0")
