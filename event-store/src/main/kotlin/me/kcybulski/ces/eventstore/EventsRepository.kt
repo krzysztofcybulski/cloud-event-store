@@ -17,6 +17,7 @@ sealed interface SaveEventResult {
 
     object Saved : SaveEventResult
     object OptimisticLockingError : SaveEventResult
+    class SavingError(val cause: Throwable): SaveEventResult
 
 }
 

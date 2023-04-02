@@ -64,9 +64,25 @@ message PublishCommand {
 message PublishResult {
   oneof results {
     PublishedSuccessfully success = 1;
+    PublishingError error = 2;
   }
 
   message PublishedSuccessfully {
     string eventId = 1;
+  }
+
+  message PublishingError {
+    oneof errors {
+      InvalidSequenceNumber invalidSequenceNumber = 1;
+      InternalError internalError = 2;
+    }
+
+    message InvalidSequenceNumber {
+      int32 sequenceNumber = 1;
+    }
+
+    message InternalError {
+
+    }
   }
 }

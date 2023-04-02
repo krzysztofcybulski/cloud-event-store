@@ -5,11 +5,8 @@ import io.grpc.Status
 import io.grpc.Status.UNIMPLEMENTED
 import io.grpc.StatusException
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.flatMapConcat
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.onEach
 import me.kcybulski.ces.EventStoreGrpcKt.EventStoreCoroutineImplBase
 import me.kcybulski.ces.PublishCommand
 import me.kcybulski.ces.PublishCommand.CommandCase.APPEND
@@ -18,13 +15,18 @@ import me.kcybulski.ces.PublishCommand.PublishEvent
 import me.kcybulski.ces.PublishCommand.PublishEvent.ExpectedSequenceNumber.KindCase.SPECIFICSEQUENCENUMBER
 import me.kcybulski.ces.PublishCommand.PublishEvent.Stream.KindCase.STREAMID
 import me.kcybulski.ces.PublishResult
+import me.kcybulski.ces.PublishResultKt.PublishingErrorKt.internalError
+import me.kcybulski.ces.PublishResultKt.PublishingErrorKt.invalidSequenceNumber
 import me.kcybulski.ces.PublishResultKt.publishedSuccessfully
+import me.kcybulski.ces.PublishResultKt.publishingError
 import me.kcybulski.ces.StreamMessage
 import me.kcybulski.ces.StreamedEvent
 import me.kcybulski.ces.eventstore.Event
 import me.kcybulski.ces.eventstore.EventStore
 import me.kcybulski.ces.eventstore.ExpectedSequenceNumber
 import me.kcybulski.ces.eventstore.PublishingResult
+import me.kcybulski.ces.eventstore.PublishingResult.Failure.InternalError
+import me.kcybulski.ces.eventstore.PublishingResult.Failure.InvalidExpectedSequenceNumber
 import me.kcybulski.ces.eventstore.ReadQuery.SpecificStream
 import me.kcybulski.ces.eventstore.Stream
 import me.kcybulski.ces.publishResult
@@ -53,8 +55,26 @@ class EventStoreResource(
         }
             .let { result ->
                 publishResult {
-                    success = publishedSuccessfully {
-                        eventId = (result as? PublishingResult.Success)?.eventId?.raw ?: ""
+                    when (result) {
+                        is PublishingResult.Success -> {
+                            success = publishedSuccessfully {
+                                eventId = result.eventId.raw
+                            }
+                        }
+
+                        is InvalidExpectedSequenceNumber -> {
+                            error = publishingError {
+                                invalidSequenceNumber = invalidSequenceNumber {
+                                    sequenceNumber = result.expectedSequenceNumber.number.toInt()
+                                }
+                            }
+                        }
+
+                        is InternalError -> {
+                            error = publishingError {
+                                internalError = internalError {}
+                            }
+                        }
                     }
                 }
             }

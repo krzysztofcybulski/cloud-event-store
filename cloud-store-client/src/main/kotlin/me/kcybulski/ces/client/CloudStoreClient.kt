@@ -11,6 +11,7 @@ import me.kcybulski.ces.eventstore.PublishingResult
 import me.kcybulski.ces.eventstore.ReadQuery
 import me.kcybulski.ces.eventstore.Stream
 import me.kcybulski.ces.eventstore.StreamedEvent
+import mu.KLogging
 
 internal class CloudStoreClient(
     managedChannel: ManagedChannel,
@@ -24,17 +25,23 @@ internal class CloudStoreClient(
         event: Event<A>,
         stream: Stream,
         expectedSequenceNumber: ExpectedSequenceNumber
-    ): PublishingResult =
-        mapper.publishCommandRequest(stream, expectedSequenceNumber, event)
+    ): PublishingResult {
+        logger.info { "Publishing ${event.type} event to cloud to stream $stream (expected version $expectedSequenceNumber)" }
+        return mapper.publishCommandRequest(stream, expectedSequenceNumber, event)
             .let { streamingStub.publish(it) }
             .let(mapper::publishResult)
+    }
 
-    override suspend fun read(readQuery: ReadQuery): EventStream =
-        streamingStub.stream(mapper.request(readQuery))
+    override suspend fun read(readQuery: ReadQuery): EventStream {
+        logger.info { "Reading events $readQuery" }
+        return streamingStub.stream(mapper.request(readQuery))
             .map(mapper::streamedEvent)
             .let(EventStream::from)
+    }
 
     override suspend fun <T : Any> subscribe(name: String, type: String, handler: suspend (StreamedEvent<T>) -> Unit) {
         TODO("Not yet implemented")
     }
+
+    companion object: KLogging()
 }

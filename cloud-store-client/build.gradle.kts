@@ -1,6 +1,8 @@
 import com.google.protobuf.gradle.id
 
 plugins {
+    `java-library`
+    `maven-publish`
     id("com.google.protobuf") version "0.9.2"
 }
 
@@ -46,6 +48,16 @@ protobuf {
             it.builtins {
                 id("kotlin")
             }
+        }
+    }
+}
+
+publishing {
+    publications {
+        create<MavenPublication>("maven") {
+            groupId = "me.kcybulski.ces"
+            artifactId = "cloud-store-client"
+            from(components["java"])
         }
     }
 }

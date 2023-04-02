@@ -29,6 +29,7 @@ sealed interface PublishingResult {
     sealed interface Failure : PublishingResult {
 
         data class InvalidExpectedSequenceNumber(val expectedSequenceNumber: SpecificSequenceNumber) : Failure
+        data class InternalError(val cause: Throwable): Failure
 
     }
 }

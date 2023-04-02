@@ -1,10 +1,14 @@
 package me.kcybulski.ces.service
 
 import me.kcybulski.ces.eventstore.EventStoreConfiguration.eventStore
+import me.kcybulski.ces.mongo.mongo
 
 fun main() {
     val eventStore = eventStore {
-        inMemory()
+        mongo {
+            mongoUrl = "mongodb://localhost:27017"
+            database = "event-store"
+        }
         noSerialization()
     }
 

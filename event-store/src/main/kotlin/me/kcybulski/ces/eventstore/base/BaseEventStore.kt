@@ -13,6 +13,7 @@ import me.kcybulski.ces.eventstore.ExpectedSequenceNumber
 import me.kcybulski.ces.eventstore.ExpectedSequenceNumber.AnySequenceNumber
 import me.kcybulski.ces.eventstore.ExpectedSequenceNumber.SpecificSequenceNumber
 import me.kcybulski.ces.eventstore.PublishingResult
+import me.kcybulski.ces.eventstore.PublishingResult.Failure.InternalError
 import me.kcybulski.ces.eventstore.PublishingResult.Failure.InvalidExpectedSequenceNumber
 import me.kcybulski.ces.eventstore.PublishingResult.Success
 import me.kcybulski.ces.eventstore.ReadQuery
@@ -21,6 +22,7 @@ import me.kcybulski.ces.eventstore.ReadQuery.SpecificEvent
 import me.kcybulski.ces.eventstore.ReadQuery.SpecificStream
 import me.kcybulski.ces.eventstore.SaveEventResult.OptimisticLockingError
 import me.kcybulski.ces.eventstore.SaveEventResult.Saved
+import me.kcybulski.ces.eventstore.SaveEventResult.SavingError
 import me.kcybulski.ces.eventstore.SerializedEvent
 import me.kcybulski.ces.eventstore.Stream
 import me.kcybulski.ces.eventstore.StreamedEvent
@@ -41,8 +43,8 @@ internal class BaseEventStore(
         stream: Stream,
         expectedSequenceNumber: ExpectedSequenceNumber
     ): PublishingResult {
-        logger.info { "Publishing new event to ${stream.id}" }
-        val eventId = EventId(randomUUID().toString())
+        logger.info { "Publishing ${event.type} event to ${stream.id}" }
+        val eventId = createEventId()
         val serializedEvent = SerializedEvent(
             id = eventId,
             stream = stream,
@@ -56,11 +58,25 @@ internal class BaseEventStore(
             payload = serializer.serialize(event.payload),
             _class = event.className
         )
-        return when (repository.save(serializedEvent)) {
-            Saved -> Success(eventId)
-            OptimisticLockingError -> InvalidExpectedSequenceNumber(expectedSequenceNumber as SpecificSequenceNumber)
+        return when (val result = repository.save(serializedEvent)) {
+            Saved -> {
+                logger.info { "Successfully published ${event.type} event $result o $stream" }
+                Success(eventId)
+            }
+
+            OptimisticLockingError -> {
+                logger.warn { "Couldn't publish ${event.type} event to $stream, because of invalid sequence number" }
+                InvalidExpectedSequenceNumber(expectedSequenceNumber as SpecificSequenceNumber)
+            }
+
+            is SavingError -> {
+                logger.error(result.cause) { "Couldn't publish ${event.type} event to $stream, because of internal error" }
+                InternalError(result.cause)
+            }
         }
     }
+
+    private fun createEventId() = EventId(randomUUID().toString())
 
     override suspend fun read(readQuery: ReadQuery): EventStream =
         when (readQuery) {

@@ -1,13 +1,22 @@
 package me.kcybulski.ces.mongo
 
+import com.mongodb.ErrorCategory
+import com.mongodb.ErrorCategory.DUPLICATE_KEY
+import com.mongodb.MongoWriteException
+import com.mongodb.client.model.IndexOptions
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.runBlocking
 import me.kcybulski.ces.eventstore.EventId
 import me.kcybulski.ces.eventstore.EventsRepository
 import me.kcybulski.ces.eventstore.SaveEventResult
+import me.kcybulski.ces.eventstore.SaveEventResult.OptimisticLockingError
+import me.kcybulski.ces.eventstore.SaveEventResult.Saved
+import me.kcybulski.ces.eventstore.SaveEventResult.SavingError
 import me.kcybulski.ces.eventstore.SerializedEvent
 import me.kcybulski.ces.eventstore.Stream
 import me.kcybulski.ces.eventstore.tasks.TasksRepository
+import mu.KLogging
 import org.bson.codecs.pojo.annotations.BsonId
 import org.litote.kmongo.and
 import org.litote.kmongo.coroutine.CoroutineDatabase
@@ -23,9 +32,53 @@ internal class MongoEventsRepository(
 
     private val events = database.getCollection<MongoEvent>("events")
 
+    init {
+        runBlocking {
+            logger.debug { "Ensuring that unique idnex (stream, sequenceNumber) exists" }
+            events.ensureIndex(
+                MongoEvent::stream,
+                MongoEvent::sequenceNumber,
+                indexOptions = IndexOptions().unique(true)
+            )
+        }
+    }
+
     override suspend fun save(event: SerializedEvent): SaveEventResult {
-        events.save(MongoEvent.from(event))
-        return SaveEventResult.Saved
+        val lastSequenceNumber = findLastSequenceNumber(event)
+        if (event.sequenceNumber != null && event.sequenceNumber != lastSequenceNumber + 1) {
+            return OptimisticLockingError
+        }
+        try {
+            tryToSave(event, lastSequenceNumber)
+        } catch (e: MongoWriteException) {
+            return handleSavingError(e)
+        }
+        return Saved
+    }
+
+    private suspend fun findLastSequenceNumber(event: SerializedEvent) =
+        events
+            .find(MongoEvent::stream eq event.stream.id)
+            .descendingSort(MongoEvent::sequenceNumber)
+            .first()
+            ?.sequenceNumber
+            ?: -1
+
+    private suspend fun tryToSave(event: SerializedEvent, lastSequenceNumber: Long) {
+        events.save(
+            MongoEvent.from(
+                event.copy(
+                    sequenceNumber = event.sequenceNumber ?: (lastSequenceNumber + 1)
+                )
+            )
+        )
+    }
+
+    private fun handleSavingError(e: MongoWriteException): SaveEventResult {
+        if (ErrorCategory.fromErrorCode(e.error.code) == DUPLICATE_KEY) {
+            return OptimisticLockingError
+        }
+        return SavingError(e)
     }
 
     override suspend fun loadAll(): Flow<SerializedEvent> =
@@ -54,6 +107,8 @@ internal class MongoEventsRepository(
 
     override suspend fun findUnprocessedTask(): SerializedEvent? =
         events.findOne(MongoEvent::subscribers ne emptyList<Nothing>())?.asSerializedEvent()
+
+    companion object : KLogging()
 }
 
 internal class MongoEvent(

@@ -2,6 +2,8 @@ package me.kcybulski.ces.eventstore.aggregates
 
 import me.kcybulski.ces.eventstore.Event
 import me.kcybulski.ces.eventstore.EventStore
+import me.kcybulski.ces.eventstore.ExpectedSequenceNumber
+import me.kcybulski.ces.eventstore.ExpectedSequenceNumber.SpecificSequenceNumber
 import me.kcybulski.ces.eventstore.ReadQuery.SpecificStream
 import me.kcybulski.ces.eventstore.Stream
 import kotlin.reflect.KClass
@@ -14,13 +16,22 @@ class Aggregates internal constructor(
 
     suspend inline fun <reified T : Aggregate<T>> load(stream: Stream): T? {
         val (head, tail) = readEvents(stream) ?: return null
-        return tail.fold(initialState(head)) { agg, event -> agg?.apply(event.payload as Event<*>) }
+        val aggregate: T? = tail.fold(initialState(head)) { agg, event -> agg?.apply(event.payload as Event<*>) }
+        aggregate?.version = tail.size.toLong()
+        return aggregate
     }
 
     suspend fun <T : Aggregate<T>> save(aggregate: T): SaveAggregateResult {
         aggregate
             .unpublishedEvents
-            .forEach { eventStore.publish(it as Event<Any>, aggregate.stream) }
+            .forEachIndexed { index, event ->
+                eventStore.publish(
+                    event = event as Event<Any>,
+                    stream = aggregate.stream,
+                    expectedSequenceNumber = SpecificSequenceNumber(aggregate.version + index + 1)
+                )
+            }
+        aggregate.version += aggregate.unpublishedEvents.size
         aggregate.unpublishedEvents = listOf()
         return AggregateSaved(aggregate)
     }
