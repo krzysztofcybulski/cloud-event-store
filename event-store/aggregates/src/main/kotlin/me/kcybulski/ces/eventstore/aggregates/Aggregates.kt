@@ -2,10 +2,11 @@ package me.kcybulski.ces.eventstore.aggregates
 
 import me.kcybulski.ces.eventstore.Event
 import me.kcybulski.ces.eventstore.EventStore
-import me.kcybulski.ces.eventstore.ExpectedSequenceNumber
 import me.kcybulski.ces.eventstore.ExpectedSequenceNumber.SpecificSequenceNumber
+import me.kcybulski.ces.eventstore.PublishingResult
 import me.kcybulski.ces.eventstore.ReadQuery.SpecificStream
 import me.kcybulski.ces.eventstore.Stream
+import mu.KLogging
 import kotlin.reflect.KClass
 import kotlin.reflect.KParameter
 import kotlin.reflect.full.companionObjectInstance
@@ -22,19 +23,47 @@ class Aggregates internal constructor(
     }
 
     suspend fun <T : Aggregate<T>> save(aggregate: T): SaveAggregateResult {
-        aggregate
-            .unpublishedEvents
-            .forEachIndexed { index, event ->
-                eventStore.publish(
-                    event = event as Event<Any>,
-                    stream = aggregate.stream,
-                    expectedSequenceNumber = SpecificSequenceNumber(aggregate.version + index + 1)
-                )
-            }
-        aggregate.version += aggregate.unpublishedEvents.size
-        aggregate.unpublishedEvents = listOf()
-        return AggregateSaved(aggregate)
+        val eventsToPublishAmount = aggregate.unpublishedEvents.size
+        val publishedEvents = publishEventsFrom(aggregate)
+        updateAggregateState(aggregate, publishedEvents)
+        if (eventsToPublishAmount == 0) {
+            logger.info { "Nothing to save for aggregate ${aggregate.stream}" }
+            return AggregateSaved(aggregate)
+        }
+        if (publishedEvents.size == eventsToPublishAmount) {
+            aggregate.unpublishedEvents = listOf()
+            logger.info { "Successfully saved ${publishedEvents.size} events to  ${aggregate.stream}" }
+            return AggregateSaved(aggregate)
+        }
+        if (publishedEvents.isEmpty()) {
+            logger.error { "Aggregate not saved, because of publishing error" }
+            return AggregateSavingError
+        }
+        if (publishedEvents.size < eventsToPublishAmount) {
+            logger.error { "Aggregate saved partially, because of publishing error" }
+            return AggregatePartiallySaved(aggregate)
+        }
+        error("Invalid state! Published ${publishedEvents.size} events")
     }
+
+    private fun <T : Aggregate<T>> updateAggregateState(
+        aggregate: T,
+        publishedEvents: List<IndexedValue<Event<*>>>
+    ) {
+        aggregate.version += publishedEvents.size
+        aggregate.unpublishedEvents = aggregate.unpublishedEvents.drop(publishedEvents.size)
+    }
+
+    private suspend fun <T : Aggregate<T>> publishEventsFrom(aggregate: T) = aggregate
+        .unpublishedEvents
+        .withIndex()
+        .takeWhile { (index, event) ->
+            eventStore.publish(
+                event = event as Event<Any>,
+                stream = aggregate.stream,
+                expectedSequenceNumber = SpecificSequenceNumber(aggregate.version + index + 1)
+            ) is PublishingResult.Success
+        }
 
     suspend inline fun <reified T : Aggregate<T>> update(stream: Stream, update: (T) -> T): UpdateAggregateResult =
         load<T>(stream)
@@ -54,7 +83,7 @@ class Aggregates internal constructor(
             ?.from(initialEvent)
             ?: T::class.callEmptyConstructor()?.apply(initialEvent)
 
-    companion object {
+    companion object : KLogging() {
 
         fun onEventStore(eventStore: EventStore) = Aggregates(eventStore)
     }
@@ -64,6 +93,8 @@ sealed interface SaveAggregateResult
 sealed interface UpdateAggregateResult
 
 data class AggregateSaved<T : Aggregate<T>>(val aggregate: T) : SaveAggregateResult, UpdateAggregateResult
+object AggregateSavingError : SaveAggregateResult, UpdateAggregateResult
+data class AggregatePartiallySaved<T : Aggregate<T>>(val aggregate: T) : SaveAggregateResult, UpdateAggregateResult
 data class NoAggregateFound(val stream: Stream) : UpdateAggregateResult
 
 

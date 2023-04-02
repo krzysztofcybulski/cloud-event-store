@@ -60,7 +60,7 @@ internal class BaseEventStore(
         )
         return when (val result = repository.save(serializedEvent)) {
             Saved -> {
-                logger.info { "Successfully published ${event.type} event $result o $stream" }
+                logger.info { "Successfully published ${event.type} event $eventId to $stream" }
                 Success(eventId)
             }
 

@@ -9,6 +9,7 @@ fun main() {
             mongoUrl = "mongodb://localhost:27017"
             database = "event-store"
         }
+        withEventsCache()
         noSerialization()
     }
 
