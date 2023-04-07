@@ -8,3 +8,5 @@ include("event-store:management")
 findProject(":event-store:management")?.name = "management"
 include("cloud-store-client")
 include("cloud-store-service")
+include("event-store:read-models")
+findProject(":event-store:read-models")?.name = "read-models"

@@ -1,6 +1,7 @@
 package me.kcybulski.ces.eventstore
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import io.micrometer.core.instrument.MeterRegistry
 import kotlinx.coroutines.runBlocking
 import me.kcybulski.ces.eventstore.base.BaseEventStore
 import me.kcybulski.ces.eventstore.base.InMemoryEventsRepository
@@ -26,7 +27,8 @@ class EventStoreConfigurationBuilder {
     lateinit var tasksRepository: TasksRepository
     lateinit var eventsRepository: EventsRepository
     lateinit var serializer: EventSerializer
-    var eventsCache: Boolean = false
+    private var eventsCache: Boolean = false
+    private var metrics: MeterRegistry? = null
 
     init {
         inMemory()
@@ -55,6 +57,14 @@ class EventStoreConfigurationBuilder {
         eventsCache = false
     }
 
+    fun withMetrics(meterRegistry: MeterRegistry) {
+        metrics = meterRegistry
+    }
+
+    fun noMetrics() {
+        metrics = null
+    }
+
     internal fun eventStore(): EventStore {
         val subscriptionsRegistry = SubscriptionsRegistry()
         var repository = eventsRepository
@@ -69,11 +79,15 @@ class EventStoreConfigurationBuilder {
         runBlocking {
             CoroutinesTaskProcessingScheduler(tasksProcessor).start()
         }
-        return BaseEventStore(
+        var eventStore: EventStore = BaseEventStore(
             repository = repository,
             serializer = serializer,
             clock = Clock.systemUTC(),
             subscriptionsRegistry = subscriptionsRegistry
         )
+        if (metrics != null) {
+            eventStore = MeteredEventStore(eventStore, metrics!!)
+        }
+        return eventStore
     }
 }

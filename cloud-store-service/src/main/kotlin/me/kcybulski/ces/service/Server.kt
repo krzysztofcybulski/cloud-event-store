@@ -1,31 +1,17 @@
 package me.kcybulski.ces.service
 
+import io.micrometer.prometheus.PrometheusMeterRegistry
 import me.kcybulski.ces.eventstore.EventStore
-import me.kcybulski.ces.eventstore.EventStoreConfiguration
-import me.kcybulski.ces.eventstore.EventStoreConfiguration.eventStore
 import me.kcybulski.ces.service.api.EventStoreResource
 import me.kcybulski.ces.service.grpc.GrpcRatpackServer
 import ratpack.core.server.RatpackServer
-import ratpack.exec.registry.Registry
 
 class Server(
     private val eventStore: EventStore,
+    private val prometheusMeterRegistry: PrometheusMeterRegistry,
     private val configuration: ServerConfiguration
 ) {
 
-    private val grpcServer = GrpcRatpackServer.of { server ->
-        server
-            .serverConfig { config ->
-                config
-                    .port(configuration.grpcPort)
-                    .threads(configuration.grpcThreads)
-            }
-            .registry { registry ->
-                registry.join(Registry.of {
-                    it.add(EventStoreResource(eventStore))
-                })
-            }
-    }
 
     private val httpServer = RatpackServer.of { server ->
         server
@@ -35,9 +21,25 @@ class Server(
                     .threads(configuration.httpThreads)
             }
             .handlers { chain ->
-                chain.get { ctx -> ctx.render("Hello!") }
+                chain
+                    .get("metrics") {
+                        it.render(prometheusMeterRegistry.scrape())
+                    }
             }
     }
+
+    private val grpcServer = GrpcRatpackServer.of { server ->
+        server
+            .serverConfig { config ->
+                config
+                    .port(configuration.grpcPort)
+                    .threads(configuration.grpcThreads)
+            }
+            .registryOf { registry ->
+                registry.add(EventStoreResource(eventStore))
+            }
+    }
+
 
     fun start() {
         if (configuration.httpEnabled) {
